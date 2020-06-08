@@ -1,0 +1,23 @@
+{
+    "name": "guess-and-draw",
+    "version": "1.0.0",
+    "description": "",
+    "main": "server.js",
+    "scripts": {
+        "start": "node server.js"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/victoroliveirab/guess-and-draw.git"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "bugs": {
+        "url": "https://github.com/victoroliveirab/guess-and-draw/issues"
+    },
+    "homepage": "https://github.com/victoroliveirab/guess-and-draw#readme",
+    "dependencies": {
+        "ws": "^7.3.0"
+    }
+}
