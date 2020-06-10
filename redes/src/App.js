@@ -1,11 +1,28 @@
-import React from 'react';
-import Canva from './components/Canva/';
+import React, {Component} from 'react';
+import Canva from './components/Canva';
+import './App.css';
 
-class App extends React.Component {
+class App extends Component {
+  
+  state = {
+    color: [255, 255, 255],
+    delete: 0
+  }
+
+
+  getStyle = () => {
+      return {
+        padding: '100px'
+      }
+  }
+
   render() {
-    return(
-      <Canva />
-    )
+    return (
+      <div>
+        <Canva style={this.getStyle}></Canva>
+      </div>
+    );
   }
 }
+
 export default App;
