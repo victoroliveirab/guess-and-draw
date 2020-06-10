@@ -1,35 +1,39 @@
-import React, {Component} from 'react';
+import React, { Component } from 'react';
 import P5Wrapper from 'react-p5-wrapper';
 import sketch from './Sketch';
 
 class Canva extends Component {
-  
-  state = {
-    color: [255, 255, 255],
-    delete: 0
-  }
 
-  randomColor = () => {
-    this.setState({color:[
-      Math.floor(Math.random()*255), 
-      Math.floor(Math.random()*255), 
-      Math.floor(Math.random()*255)]});
-  }
+    state = {
+        color: [255, 255, 255],
+        delete: 0
+    }
 
-  resetBkg = () => { 
-      this.setState({delete: this.state.delete + 1,})
-      console.log(this.state.delete)
-  }
+    randomColor = () => {
+        this.setState({
+            color: [
+                Math.floor(Math.random() * 255),
+                Math.floor(Math.random() * 255),
+                Math.floor(Math.random() * 255)]
+        });
+    }
 
-  render() {
-    return (
-      <div>
-        <button onClick={this.randomColor}>Mudar Cor</button>
-        <button onClick={this.resetBkg}>Apagar </button>
-        <P5Wrapper sketch={sketch} color={this.state.color} del={this.state.delete}></P5Wrapper>
-      </div>
-    );
-  }
+    resetBkg = () => {
+        this.setState({ delete: this.state.delete + 1, })
+        console.log(this.state.delete)
+    }
+
+    render() {
+        //console.log(this.data.color);
+        return (
+            <div>
+                <button onClick={this.randomColor}>Mudar Cor</button>
+                <button onClick={this.resetBkg}>Apagar</button>
+                <P5Wrapper sketch={sketch} color={this.state.color} del={this.state.delete}></P5Wrapper>
+            </div>
+        )
+    }
 }
 
-export default Canva;
+
+export default Canva 
