@@ -8,7 +8,8 @@ class Canva extends Component {
 
     state = {
         color: '#000000', 
-        delete: 0
+        delete: 0,
+        reset: 0,
       }
     
       changeColor = (item) => {
@@ -16,20 +17,23 @@ class Canva extends Component {
           this.setState({color: color})
       } 
     
-      resetBkg = () => { 
+      deleteBkg = () => { 
           this.setState({delete: this.state.delete + 1,})
-          console.log(this.state.delete)
       }
+
+      resetMove = () => { 
+        this.setState({reset: this.state.reset + 1,})
+    }
 
     render() {
         //console.log(this.data.color);
         return (
             <div>
-                <P5Wrapper sketch={sketch} color={this.state.color} del={this.state.delete}></P5Wrapper>
+                <P5Wrapper sketch={sketch} color={this.state.color} del={this.state.delete} rst={this.state.reset}></P5Wrapper>
                 <div style= {{background: '#a6a6a6', width: '800px', overflow: 'auto'}}>
                     <SideMenu changeColor = {this.changeColor}/>
-                    <button style={btnStyle} onClick={this.randomColor}>Reset</button>
-                    <button style={btnStyle} onClick={this.resetBkg}>Apagar</button>
+                    <button style={btnStyle} onClick={this.resetMove}>Reset</button>
+                    <button style={btnStyle} onClick={this.deleteBkg}>Apagar</button>
                 </div>
             </div>
         )

@@ -9,8 +9,9 @@ class SideMenu extends Component{
                 name: 'black',
                 style: {
                     border: 'none',
+                    borderRadius: '4px',
                     background: '#000000',
-                    padding: '20px 4%',
+                    padding: '20px 2.5em',
                     cursor: 'pointer',
                 }
             },
@@ -19,8 +20,9 @@ class SideMenu extends Component{
                 name: 'red',
                 style: {
                     border: 'none',
+                    borderRadius: '4px',
                     background: '#ff0000',
-                    padding: '20px 4%',
+                    padding: '20px 2.5em',
                     cursor: 'pointer',
                 }
             },
@@ -29,8 +31,9 @@ class SideMenu extends Component{
                 name: 'blue',
                 style: {
                     border: 'none',
+                    borderRadius: '4px',
                     background: '#1a1aff',
-                    padding: '20px 4%',
+                    padding: '20px 2.5em',
                     cursor: 'pointer',
                 }
             },
@@ -39,8 +42,9 @@ class SideMenu extends Component{
                 name: 'yellow',
                 style: {
                     border: 'none',
+                    borderRadius: '4px',
                     background: '#ffff00',
-                    padding: '20px 4%',
+                    padding: '20px 2.5em',
                     cursor: 'pointer',
                 }
             },
@@ -49,8 +53,9 @@ class SideMenu extends Component{
                 name: 'green',
                 style: {
                     border: 'none',
+                    borderRadius: '4px',
                     background: '#1aff1a',
-                    padding: '20px 4%',
+                    padding: '20px 2.5em',
                     cursor: 'pointer',
                 }
             },
@@ -59,8 +64,9 @@ class SideMenu extends Component{
                 name: 'pink',
                 style: {
                     border: 'none',
+                    borderRadius: '4px',
                     background: '#ff4dd2',
-                    padding: '20px 4%',
+                    padding: '20px 2.5em',
                     cursor: 'pointer',
                 }
             },
@@ -69,8 +75,9 @@ class SideMenu extends Component{
                 name: 'brown',
                 style: {
                     border: 'none',
+                    borderRadius: '4px',
                     background: '#663300',
-                    padding: '20px 4%',
+                    padding: '20px 2.5em',
                     cursor: 'pointer',
                 }
             },
@@ -79,8 +86,9 @@ class SideMenu extends Component{
                 name: 'white',
                 style: {
                     border: 'none',
+                    borderRadius: '4px',
                     background: '#ffffff',
-                    padding: '20px 4%',
+                    padding: '20px 2.5em',
                     cursor: 'pointer',
                 }
             }

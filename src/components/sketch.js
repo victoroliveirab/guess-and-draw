@@ -10,35 +10,62 @@ const sketch = (p) => {
     let width = 800;
     let color;
     let del = 0;
-    let flag = false;
+    let rst = 0;
+    let rstFlag = false;
+    let delFlag = false;
+    let moves = [];
     let lastMove = [];
+
 
     let fun = {
       clear: function() {
         p.background(canvaColor);
-        flag = !flag;
+        delFlag = !delFlag;
       },
       drawColor: function() {
         p.fill(color);
+        p.noStroke();
         p.rect(p.mouseX, p.mouseY, 3, 3);
       },
       delLastMove: function() {
-        if(!lastMove.len === 0){
-          lastMove.map((item) => {
-            console.log(item.x, item.y);
+        let a = moves.pop();
+        try{
+          a.map(item => {
             p.fill(canvaColor);
+            p.noStroke();
             p.rect(item.x, item.y, 3, 3);
           });
-          flag = !flag;
         }
+        catch(err){
+
+        }
+        rstFlag = !rstFlag;
       },
       getLastMove: function() {
-        //lastMove.push(pos);
+        let pos  = {};
+        pos['x'] = p.mouseX;
+        pos['y'] = p.mouseY;
+        lastMove.push(pos);
       }
 
     }
 
+    p.mouseReleased = () => {
+      if (canvas && (p.mouseX < width & p.mouseY < height)) {
+        moves.push(lastMove);
+        lastMove = [];
+      }
+    }
 
+    //Adicionar bound esquedo e superior no if
+    p.mouseDragged = () => {
+      if (canvas && (p.mouseX < width & p.mouseY < height)) {
+      fun.drawColor();
+      fun.getLastMove();
+      }
+      return false;
+    }
+    
     p.setup = () => {
       canvas = p.createCanvas(width, height);
       p.background(canvaColor);
@@ -48,33 +75,25 @@ const sketch = (p) => {
     }
     
     p.draw = () => {
-        if(flag){
-          //fun.delLastMove();
-           fun.clear();
+        if(delFlag){
+          fun.clear();
+        }
+        if(rstFlag){
+          fun.delLastMove();
         }
     }
 
-    p.mousePressed = () => {
-        console.log(lastMove);
-        lastMove = [];
-    }
-
-    //Adicionar bound esquedo e superior no if
-    p.mouseDragged = () => {
-      if (canvas && (p.mouseX < width & p.mouseY < height)) {
-       fun.drawColor();
-       fun.getLastMove();
-      }
-      return false;
-    }
-  
     // o Wrapper usa essa função para pegar props : )
     p.myCustomRedrawAccordingToNewPropsHandler = (props) => {
         color = props.color;
         if(del !== props.del){
-            flag = !flag;
+            delFlag = !delFlag;
             del = props.del;
         }
+        if(rst !== props.rst){
+          rstFlag = !rstFlag;
+          rst = props.rst;
+      }
     }
 }
 
