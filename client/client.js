@@ -48,17 +48,17 @@ client.on('listening', () => {
 
 const sendSocketDg = {
     "dt":
-        (packet) => {
+        (datagram) => {
             var packet = new Buffer.from("dt" + JSON.stringify(datagram));
-            server.send(packet, 0, packet.length, PORT, HOST, function(err, bytes) {
+            client.send(packet, 0, packet.length, PORT, HOST, function(err, bytes) {
             if (err) throw err;
-            console.log('UDP datagram sent to ' + HOST +':'+ PORT);
+            console.log('UDP datagram sent to ' + HOST +':'+ PORT + ' id: ' + datagram.headerId);
             });
     },
     "ACK":
-            (packet, id) => {
-            var packet = new Buffer.from("ACK"+ id + JSON.stringify(datagram));
-            server.send(packet, 0, packet.length, PORT, HOST, function(err, bytes) {
+            (packet) => {
+            var packet = new Buffer.from("ACK" + JSON.stringify(datagram));
+            client.send(packet, 0, packet.length, PORT, HOST, function(err, bytes) {
             if (err) throw err;
             console.log('UDP ACK retured to ' + HOST +':'+ PORT);
             });
@@ -66,17 +66,45 @@ const sendSocketDg = {
     "message": 
             (message, id) => {
                 var datagram = socketWrapper(message, id);
-                var packet = new Buffer.from(JSON.stringify(datagram));
-                server.send(packet, 0, packet.length, PORT, HOST, function(err, bytes) {
+                var packet = new Buffer.from('message' + JSON.stringify(datagram));
+                client.send(packet, 0, packet.length, PORT, HOST, function(err, bytes) {
                 if (err) throw err;
                 console.log('UDP message to ' + HOST +':'+ PORT);
                 });
             }
 }
 
+const unwrapper = {
+    'dt': (message) => {
+        var data = message.toString().replace("dt", "") ;
+        var recieved = JSON.parse(data);
+        console.log('>>');
+        console.log('>Unwrapped ' + data);
+        console.log('>payload ' + recieved['payload']);
+        console.log(' ');
+        return recieved;
+    },
+    'message': (message) => {
+        var data = message.toString().replace("message", "") ;
+        var recieved = JSON.parse(data);
+        console.log('>>');
+        console.log('>Unwrapped ' + data);
+        console.log('>(from unwrapper) Message ' + recieved['payload']);
+        console.log(' ');
+        return recieved;
+    }
+}
+
+// take the data and return it in an not wrapped datagram
+/**
+ * wrapp the datagram into a packet to be and send forth
+ * @param {*} data, the data to become a new Datagram object
+ * @param { int } id, the header ID (int)
+ */
 function socketWrapper(data, id){
     var packet = new Datagram(id, data, HOST, HOST,0);
-    size = new Buffer.from(JSON.stringify(packet));
+    // console.log('>(from wrapper) datagram ' + JSON.stringify(packet));
+    size = new Buffer.from("dt" + JSON.stringify( packet));
     packet.headerLength = size.length;
     return packet;
 }
@@ -84,13 +112,18 @@ function socketWrapper(data, id){
 function secureChTest() {
     var data = "I'm packet n";
     for (let i = 0; i < 10; i++) {
-
+        var boxed = socketWrapper(data+i, i+1);
+        sendSocketDg['dt'](boxed);
     }
 }
 
 function unwrapBuffer(message) {
-    var datagramJSON = (message.toString());
-    var recieved = JSON.parse(datagramJSON);
+    var data = message.toString().replace("dt", "") ;
+    var recieved = JSON.parse(data);
+    console.log('>>');
+    console.log('>Unwrapped ' + data);
+    console.log('>payload ' + recieved['payload']);
+    console.log(' ');
     return recieved;
 }
 
@@ -103,18 +136,25 @@ function reliableSnd(datagram) {
 
 }
 
-function sendSocket(datagram) {
-    packet = new Buffer.from("dt" + JSON.stringify( datagram));
+/**
+ * wrapp the datagram into a packet to be and send forth
+ * @param {*} packet the datagram to send
+ */
+function sendSocket(datagram, type) {
+    packet = new Buffer.from(type + JSON.stringify(datagram));
     client.send(packet, 0, packet.length, PORT, HOST, function(err, bytes) {
         if (err) throw err;
-        console.log('UDP message sent to ' + HOST +':'+ PORT +"=> " + packet);
+        console.log('UDP message sent to ' + HOST +':'+ PORT);
+        console.log('>Typesent ' + typeof(packet) );
+        console.log('>Sent ' + type);
+        // console.log('>Pure ' + type );
+        console.log('>>');
       });
 }
 
-
-
 let handshaked = false;
 client.on('message', function messageHandler(message, remote) {
+
     if (message.toString() === 'ACK' && handshaked === false) {
         var synack = new Buffer.from("SYNACK");
         client.send(synack, 0, synack.length, PORT, HOST, function(err, bytes) {
@@ -126,15 +166,26 @@ client.on('message', function messageHandler(message, remote) {
     } else if (message.toString().match("HELO") && handshaked) {
         console.log(">"+message);
         console.log(" ");
-        sendSocket(socketWrapper("Just livin on database wooo wooo", 0) );
+        sendSocket(socketWrapper("Just livin on database wooo wooo", 0),"message");
+
     } 
+    else if (message.toString().match('message')) {
+        console.log(' ');
+        var unboxed = unwrapper['message'](message);
+        console.log('>message received ' + JSON.stringify(unboxed) );
+        var wrapped = socketWrapper("ACK"+unboxed.headerId, unboxed.headerId) ;
+        sendSocketDg['ACK'](wrapped);
+
+    }
     // secure channel recieving
     else if (message.toString().match('dt')) {
         var dtRcvd = unwrapBuffer(message);
         console.log(">Packet from "+remote.address+":" + remote.port + "\n"+dtRcvd);
         console.log(" ");
-        sendSocket(socketWrapper("ACK"+dtRcvd.headerId, dtRcvd.headerId));
-    }else if (message.toString().match("ACK")) {
+        sendSocket(socketWrapper("ACK", dtRcvd.headerId));
+
+    }
+    else if (message.toString().match("ACK")) {
         console.log(">"+message);
         console.log(" ");
         console.log(">>Gotcha catch 'em all!!");
@@ -156,3 +207,6 @@ function init3WHandShake() {
 
 client.bind("4266", HOST)
 init3WHandShake();
+console.warn("WHEEEEEW");
+console.log('(* ￣︿￣)◑﹏◐');
+setTimeout(secureChTest, 1500);
