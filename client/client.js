@@ -46,10 +46,37 @@ client.on('listening', () => {
     // console.log('>Client listening on ' + address.address + ':' + address.port);
 });
 
+const sendSocketDg = {
+    "dt":
+        (packet) => {
+            var packet = new Buffer.from("dt" + JSON.stringify(datagram));
+            server.send(packet, 0, packet.length, PORT, HOST, function(err, bytes) {
+            if (err) throw err;
+            console.log('UDP datagram sent to ' + HOST +':'+ PORT);
+            });
+    },
+    "ACK":
+            (packet, id) => {
+            var packet = new Buffer.from("ACK"+ id + JSON.stringify(datagram));
+            server.send(packet, 0, packet.length, PORT, HOST, function(err, bytes) {
+            if (err) throw err;
+            console.log('UDP ACK retured to ' + HOST +':'+ PORT);
+            });
+    },
+    "message": 
+            (message, id) => {
+                var datagram = socketWrapper(message, id);
+                var packet = new Buffer.from(JSON.stringify(datagram));
+                server.send(packet, 0, packet.length, PORT, HOST, function(err, bytes) {
+                if (err) throw err;
+                console.log('UDP message to ' + HOST +':'+ PORT);
+                });
+            }
+}
 
 function socketWrapper(data, id){
     var packet = new Datagram(id, data, HOST, HOST,0);
-    size = new Buffer.from("dt" + JSON.stringify(packet));
+    size = new Buffer.from(JSON.stringify(packet));
     packet.headerLength = size.length;
     return packet;
 }
@@ -80,19 +107,23 @@ function sendSocket(datagram) {
     packet = new Buffer.from("dt" + JSON.stringify( datagram));
     client.send(packet, 0, packet.length, PORT, HOST, function(err, bytes) {
         if (err) throw err;
-        console.log('UDP message sent to ' + HOST +':'+ PORT);
+        console.log('UDP message sent to ' + HOST +':'+ PORT +"=> " + packet);
       });
 }
 
+
+
+let handshaked = false;
 client.on('message', function messageHandler(message, remote) {
-    if (message.toString() === 'ACK') {
+    if (message.toString() === 'ACK' && handshaked === false) {
         var synack = new Buffer.from("SYNACK");
         client.send(synack, 0, synack.length, PORT, HOST, function(err, bytes) {
             if (err) throw err;
             console.log('>ACK recieved from' + HOST +':'+ PORT);
             console.log('>APROVED: Sendind SYNACK'); 
           }); 
-    } else if (message.toString().match("HELO")) {
+        handshaked = true;
+    } else if (message.toString().match("HELO") && handshaked) {
         console.log(">"+message);
         console.log(" ");
         sendSocket(socketWrapper("Just livin on database wooo wooo", 0) );
@@ -103,6 +134,11 @@ client.on('message', function messageHandler(message, remote) {
         console.log(">Packet from "+remote.address+":" + remote.port + "\n"+dtRcvd);
         console.log(" ");
         sendSocket(socketWrapper("ACK"+dtRcvd.headerId, dtRcvd.headerId));
+    }else if (message.toString().match("ACK")) {
+        console.log(">"+message);
+        console.log(" ");
+        console.log(">>Gotcha catch 'em all!!");
+        // sendSocketDg["message"]();
     }
     else {
         console.log('>incoming msg from ' + remote.address + ':' + remote.port +' - ' + message);

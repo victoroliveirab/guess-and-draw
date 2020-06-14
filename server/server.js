@@ -39,9 +39,13 @@ server.on('message', function messageHandler(message, remote) {
     } 
     else if (message.toString().match('dt')) {
         var dtRcvd = unwrapBuffer(message);
-        console.log(">Packet from "+remote.address+":" + remote.port + "\n"+dtRcvd);
+        console.log(">Datagram from "+remote.address+":" + remote.port + "\n"+ dtRcvd.payload);
         console.log(" ");
-        sendSocket(socketWrapper("ACK"+dtRcvd.headerId, dtRcvd.headerId));
+        console.log('>Header.id ' + dtRcvd.headerId);
+        var wrapped = socketWrapper("ACK"+dtRcvd.headerId, dtRcvd.headerId) ;
+        console.log('>(from on.message) has dt => ' + JSON.stringify(wrapped));
+        sendSocket(wrapped, 'ACK');
+        console.log('UDP ACK returned to ' + HOST +':'+ PORT);
     }
     else {
         console.log('>incoming msg from ' + remote.address + ':' + remote.port +' - ' + message);
@@ -60,17 +64,25 @@ server.on('message', function messageHandler(message, remote) {
 // }
 
 class Datagram {
-    constructor(payload,headerSrc,headerDst,headerLength)  {
+    constructor(id, payload,headerSrc,headerDst,headerLength)  {
         this.payload= payload;
         this.headerSrc=headerSrc;
         this.headerDst=headerDst;
         this.headerLength=headerLength;
         this.headerChecksum=null;
+        this.headerId=id;
     }
 }
 
+// take the data and return it in an not wrapped datagram
+/**
+ * wrapp the datagram into a packet to be and send forth
+ * @param {*} data, the data to become a new Datagram object
+ * @param { int } id, the header ID (int)
+ */
 function socketWrapper(data, id){
     var packet = new Datagram(id, data, HOST, HOST,0);
+    console.log('>(from wrapper) datagram ' + JSON.stringify(packet));
     size = new Buffer.from("dt" + JSON.stringify( packet));
     packet.headerLength = size.length;
     return packet;
@@ -79,10 +91,60 @@ function socketWrapper(data, id){
 function unwrapBuffer(message) {
     var data = message.toString().replace("dt", "") ;
     var recieved = JSON.parse(data);
+    console.log('>>');
+    console.log('>Unwrapped ' + data);
+    console.log('>payload ' + recieved['payload']);
+    console.log(' ');
     return recieved;
 }
 
-function sendSocket(packet) {
+
+/**
+ * wrapp the datagram into a packet to be and send forth
+ * @param {*} packet the datagram to send
+ */
+function sendSocket(datagram, type) {
+    packet = new Buffer.from(type + JSON.stringify(datagram));
+    server.send(packet, 0, packet.length, PORT, HOST, function(err, bytes) {
+        if (err) throw err;
+        console.log('UDP message sent to ' + HOST +':'+ PORT);
+        console.log('>Typesent ' + typeof(packet) );
+        console.log('>Sent ' + packet);
+        // console.log('>Pure ' + type );
+        console.log('>>');
+      });
+}
+
+const sendSocketDg = {
+    "dt":
+        (packet) => {
+            var packet = new Buffer.from("dt" + JSON.stringify(datagram));
+            server.send(packet, 0, packet.length, PORT, HOST, function(err, bytes) {
+            if (err) throw err;
+            console.log('UDP datagram sent to ' + HOST +':'+ PORT);
+            });
+    },
+    "ack":
+            (packet) => {
+            var packet = new Buffer.from("ACK" + JSON.stringify(datagram));
+            server.send(packet, 0, packet.length, PORT, HOST, function(err, bytes) {
+            if (err) throw err;
+            console.log('UDP ACK retured to ' + HOST +':'+ PORT);
+            });
+    },
+    "message": 
+        (message, id) => {
+            var datagram = socketWrapper(message, id);
+            var packet = new Buffer.from(JSON.stringify(datagram));
+            server.send(packet, 0, packet.length, PORT, HOST, function(err, bytes) {
+            if (err) throw err;
+            console.log('UDP ACK retured to ' + HOST +':'+ PORT);
+            });
+        }
+}
+
+function sendSocketDgw(datagram) {
+    var acket = new Buffer.from("dt" + JSON.stringify(datagram));
     server.send(packet, 0, packet.length, PORT, HOST, function(err, bytes) {
         if (err) throw err;
         console.log('UDP message sent to ' + HOST +':'+ PORT);
