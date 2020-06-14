@@ -1,35 +1,17 @@
-import React, {Component} from 'react';
-import P5Wrapper from 'react-p5-wrapper';
-import sketch from './components/sketch';
-import './App.css';
+import React from 'react';
+import {Provider} from 'react-redux';
 
-class App extends Component {
-  
-  state = {
-    color: [255, 255, 255],
-    delete: 0
-  }
+import Routes from './routes';
 
-  randomColor = () => {
-    this.setState({color:[
-      Math.floor(Math.random()*255), 
-      Math.floor(Math.random()*255), 
-      Math.floor(Math.random()*255)]});
-  }
+import store from './store';
 
-  resetBkg = () => { 
-      this.setState({delete: this.state.delete + 1,})
-      console.log(this.state.delete)
-  }
-
+class App extends React.Component {
   render() {
-    return (
-      <div>
-        <button onClick={this.randomColor}>Mudar Cor</button>
-        <button onClick={this.resetBkg}>Apagar </button>
-        <P5Wrapper sketch={sketch} color={this.state.color} del={this.state.delete}></P5Wrapper>
-      </div>
-    );
+    return(
+      <Provider store={store}>
+        <Routes />
+      </Provider>
+    )
   }
 }
 
