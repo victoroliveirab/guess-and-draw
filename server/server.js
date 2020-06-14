@@ -53,7 +53,7 @@ server.on('message', function messageHandler(message, remote) {
         console.log(" ");
         console.log(">"+message);
         var unboxed = unwrapper['ACK'](message);
-        console.log(">>Gotcha catch 'em all!! GOT: " + unboxed['payload'] + ' id: ' + unboxed['headerId']);
+        console.log(">>Gotcha catch 'em all!! ~o( =∩ω∩= )m┏ (゜ω゜)=☞ GOT: " + unboxed['payload'] + ' id: ' + unboxed['headerId']);
         // sendSocketDg["message"]();
     }
     else if (message.toString().match('message')) {

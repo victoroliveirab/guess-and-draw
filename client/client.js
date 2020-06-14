@@ -52,7 +52,7 @@ const sendSocketDg = {
             var packet = new Buffer.from("dt" + JSON.stringify(datagram));
             client.send(packet, 0, packet.length, PORT, HOST, function(err, bytes) {
             if (err) throw err;
-            console.log('UDP datagram sent to ' + HOST +':'+ PORT + ' id: ' + datagram.headerId);
+            console.log('UDP ( •̀ ω •́ )✧ datagwam sent to ' + HOST +':'+ PORT + ' id: ' + datagram.headerId);
             });
     },
     "ACK":
