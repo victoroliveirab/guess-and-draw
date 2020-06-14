@@ -1,0 +1,19 @@
+{
+  "name": "black-server",
+  "version": "1.0.0",
+  "description": "",
+  "main": "server.js",
+  "scripts": {
+    "test": "run server"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/victoroliveirab/guess-and-draw.git"
+  },
+  "author": "JesuisOriginal",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/victoroliveirab/guess-and-draw/issues"
+  },
+  "homepage": "https://github.com/victoroliveirab/guess-and-draw#readme"
+}
