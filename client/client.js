@@ -28,8 +28,40 @@ client.on('listening', () => {
     // console.log('>Client listening on ' + address.address + ':' + address.port);
 });
 
+
+var sentHistory = {};
+var ackHistory= {};
+var receiving = {};
+var id = 0;
+var range;
+var rid = 0; // receiving idvar id = 0;
+
+const history = {
+    'add': (message, id) => {
+        sentHistory[id] = message;
+        console.log('>New History entry:' + (parseInt(id) +1));
+    },
+    'remove': (id) => {
+        delete sentHistory[id];
+        console.log('>WHOOSH ' + id + 'went down the toilet');
+    },
+    'show': ()=> {
+        console.log(">>")
+        console.log('>>>>> Hitowy( •̀ ω •́ )✧ <<<<')
+        for (key in sentHistory) {
+            console.log(sentHistory[ke]);
+        }
+    },
+    'get': (id) => {
+        return sentHistory[id];
+    }
+}
+
 const sendSocketDg = {
     "dt":
+            /**
+             * Stringfy a datagram, tags with dt| and sends
+             */
         (datagram) => {
             var packet = new Buffer.from("dt|" + JSON.stringify(datagram));
             client.send(packet, 0, packet.length, PORT, HOST, function(err, bytes) {
@@ -61,7 +93,33 @@ const sendSocketDg = {
         if (err) throw err;
         console.log('UDP NAK to ' + HOST +':'+ PORT);
         });
+    },
+    'SMPH':  // Simple Multi-Packet Header
+        (dtList) => {
+            var first = id;
+            for (key in dtList) {
+                history['add'](dtList[key], id);
+                id = id + 1;
+            }
+            var last = id;
+            var range = first + '-' + last;
+            var packet = new Buffer.from('SMPH|'+ JSON.stringify( {idRange: range} ));
+            client.send(packet, 0, packet.length, PORT, HOST, (err, bytes) => {
+                if (err) throw err;
+                console.log('>SMPH request sent awaiting ...');
+            });
+            console.log('>Sending SMPH request awaiting ...');
     }
+    // ,
+    // 'SMPHACK':
+    //     () => {
+    //         var message = new Buffer.from("SMPHACK");
+    //         client.send(message, 0, message.length, PORT, HOST, (err, bytes) => {
+    //             if (err) throw err;
+    //             console.log('>SMPHACK sent awaiting packets...');
+    //         });
+    //         console.log(' ');
+    // }
 }
 
 const onHandler = {
@@ -89,10 +147,39 @@ const onHandler = {
         sendSocketDg['ACK'](wrapped);
     },
     'dt': (message) => {
-        var dtRcvd = unwrapBuffer(message);
+        var dtRcvd = unwrapper['dt'](message);
         console.log(">Packet from "+remote.address+":" + remote.port + "\n"+dtRcvd);
         console.log(" ");
-        sendSocket(socketWrapper("ACK", dtRcvd.headerId));
+        // sendSocket(socketWrapper("ACK", dtRcvd.headerId));
+        var wrapped = socketWrapper("ACK"+unboxed.headerId, unboxed.headerId) ;
+        sendSocketDg['ACK'](wrapped);
+    },
+    'NAK': (message) => {
+        var nack = unwrapper['NACK'](message);
+        var resend = history['get'](nack.id)
+        sendSocketDg['dt'](resend);
+        console.log(">NAK:"+ nack.id + " resending = " + JSON.stringify(resend));
+    },
+    'SMPH': (message) => {
+        var unboxed = unwrapper['SMPH'](message);
+        var parsed = JSON.parse(unboxed);
+        receiving[rid] = parsed.idRange;
+        rid++;
+        console.log(">SMPH request aproved, sending SMPHACK...");
+        sendSocketDg['SMPHACK']();
+    },
+    /**
+     * After sending id of upcoming pkts, sends the pkts
+     */
+    'SMPHACK': (message) => {
+            if (rid >0) {
+                var start = receiving[rid-1].split('-')[0];
+                var end = receiving[rid-1].split('-')[1];
+            }
+            for (let id = start; id <= end; id++) {
+                console.log('>>Sending ' + history['get'](id));
+                sendSocketDg['dt'](history['get'](id));
+            }
     }
 }
 
@@ -167,9 +254,10 @@ const unwrapper = {
 
 // take the data and return it in an not wrapped datagram
 /**
- * wrapp the datagram into a packet to be and send forth
+ * wrapp the data into a datagram for buffering and sent
  * @param {*} data, the data to become a new Datagram object
  * @param { int } id, the header ID (int)
+ * @returns  {*} datagram
  */
 function socketWrapper(data, id){
     var packet = new Datagram(id, data, HOST, HOST,0);
@@ -179,12 +267,18 @@ function socketWrapper(data, id){
     return packet;
 }
 
+// funcao pra testes do SMPH (dropado ate NAK completo)
 function secureChTest() {
     var data = "I'm packet n";
+
+    var list = {};
     for (let i = 0; i < 10; i++) {
         var boxed = socketWrapper(data+i, i+1);
-        sendSocketDg['dt'](boxed);
+        console.log('>boxed '+ i+ " content " + JSON.stringify(boxed));
+        list[i] = boxed;
     }
+    
+    sendSocketDg['SMPH'](list);
 }
 
 function unwrapBuffer(message) {
@@ -228,13 +322,13 @@ client.on('message', function messageHandler(message, remote) {
 
     var stringed = message.toString();
     var type = stringed.split('|')[0];
-    var jsoned = stringed.split('|')[1];
+    // var jsoned = stringed.split('|')[1];
     console.log('>message type '+ type);
     // preservar esse ↓
     if (message.toString().match("HELO") && handshaked) {
         console.log(">"+message);
         console.log(" ");
-        sendSocket(socketWrapper("Just livin on database wooo wooo", 0),"message|");
+        // sendSocket(socketWrapper("Just livin on database wooo wooo", 0),"message|");
     } else {
         onHandler[type](message);
     }
@@ -255,3 +349,4 @@ init3WHandShake();
 console.warn("WHEEEEEW");
 console.log('(* ￣︿￣)◑﹏◐');
 // setTimeout(secureChTest, 1500);
+
