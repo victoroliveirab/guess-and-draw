@@ -21,24 +21,6 @@ class Datagram {
     }
 }
 
-// function msgHandler(message, remote) {
-//     if (message === 'ACK') {
-//         var synack = socketWrapper("SYNACK");
-//         client.send(ack, 0, ack.length, PORT, HOST, function(err, bytes) {
-//             if (err) throw err;
-//             console.log('>ACK recieved from' + HOST +':'+ PORT);
-//             console.log('>APROVED: Sendind SYNACK'); 
-//           });
-//     } 
-//     else {
-//         var synack = socketWrapper("SYNACK");
-//         client.send(ack, 0, ack.length, PORT, HOST, function(err, bytes) {
-//             if (err) throw err;
-//             console.log('>ACK recieved from' + HOST +':'+ PORT);
-//             console.log('>APROVED: Sendind SYNACK');
-//           });
-//     }
-// }
 
 client.on('listening', () => {
     const address = client.address();
@@ -71,20 +53,95 @@ const sendSocketDg = {
                 if (err) throw err;
                 console.log('UDP message to ' + HOST +':'+ PORT);
                 });
-            }
+    },
+    'NAK': (id) => {
+        var datagram = socketWrapper("Pkd N"+id+" not received", id);
+        var packet = new Buffer.from('NAK' + JSON.stringify(datagram));
+        client.send(packet, 0, packet.length, PORT, HOST, function(err, bytes) {
+        if (err) throw err;
+        console.log('UDP NAK to ' + HOST +':'+ PORT);
+        });
+    }
 }
+
+const onHandler = {
+    'ACK': (message) => {
+        if (handshaked === false) {
+            var synack = new Buffer.from("SYNACK");
+            client.send(synack, 0, synack.length, PORT, HOST, function(err, bytes) {
+                if (err) throw err;
+                console.log('>ACK recieved from' + HOST +':'+ PORT);
+                console.log('>APROVED: Sendind SYNACK'); 
+              }); 
+            handshaked = true;
+        }else {
+            console.log(">"+message);
+            console.log(" ");
+            console.log(">>Gotcha catch 'em all!!");
+            // sendSocketDg["message"]();
+        }
+    },
+    'message': (message) => {
+        console.log(' ');
+        var unboxed = unwrapper['message'](message);
+        console.log('>message received ' + JSON.stringify(unboxed) );
+        var wrapped = socketWrapper("ACK"+unboxed.headerId, unboxed.headerId) ;
+        sendSocketDg['ACK'](wrapped);
+    },
+    'dt': (message) => {
+        var dtRcvd = unwrapBuffer(message);
+        console.log(">Packet from "+remote.address+":" + remote.port + "\n"+dtRcvd);
+        console.log(" ");
+        sendSocket(socketWrapper("ACK", dtRcvd.headerId));
+    }
+}
+
+/**
+ * Replace the content of messageHandler of server.on('message', messageHandler), with of this function
+ * ps: add the post suffix | to sendSocketDg
+ */
+var syn = new Buffer.from("SYN");
+var synack = new Buffer.from("SYNACK"); 
+// function messageHandlerReplacement(message, remote) {
+
+//     var stringed = message.toString();
+//     var type = stringed.split('|')[0];
+//     var jsoned = stringed.split('|')[1];
+//     onHandler[type](message);
+
+//     // preservar esse ↓
+//     if (message.toString().match("HELO") && handshaked) {
+//         console.log(">"+message);
+//         console.log(" ");
+//         sendSocket(socketWrapper("Just livin on database wooo wooo", 0),"message");
+
+//     } 
+
+
+
+// }
+
 
 const unwrapper = {
     'dt': (message) => {
         var data = message.toString().replace("dt", "") ;
         var recieved = JSON.parse(data);
         console.log('>>');
-        console.log('>Unwrapped ' + data);
-        console.log('>payload ' + recieved['payload']);
+        // console.log('>Unwrapped ' + data);
+        // console.log('>payload ' + recieved['payload']);
         console.log(' ');
         return recieved;
     },
     'message': (message) => {
+        var data = message.toString().replace("message", "") ;
+        var recieved = JSON.parse(data);
+        console.log('>>');
+        // console.log('>Unwrapped ' + data);
+        // console.log('>(from unwrapper) Message ' + recieved['payload']);
+        console.log(' ');
+        return recieved;
+    },
+    'NAK': (message) => {
         var data = message.toString().replace("message", "") ;
         var recieved = JSON.parse(data);
         console.log('>>');
@@ -152,48 +209,23 @@ function sendSocket(datagram, type) {
       });
 }
 
+
 let handshaked = false;
 client.on('message', function messageHandler(message, remote) {
 
-    if (message.toString() === 'ACK' && handshaked === false) {
-        var synack = new Buffer.from("SYNACK");
-        client.send(synack, 0, synack.length, PORT, HOST, function(err, bytes) {
-            if (err) throw err;
-            console.log('>ACK recieved from' + HOST +':'+ PORT);
-            console.log('>APROVED: Sendind SYNACK'); 
-          }); 
-        handshaked = true;
-    } else if (message.toString().match("HELO") && handshaked) {
+    var stringed = message.toString();
+    var type = stringed.split('|')[0];
+    var jsoned = stringed.split('|')[1];
+    console.log('>message type '+ type);
+    // preservar esse ↓
+    if (message.toString().match("HELO") && handshaked) {
         console.log(">"+message);
         console.log(" ");
         sendSocket(socketWrapper("Just livin on database wooo wooo", 0),"message");
-
-    } 
-    else if (message.toString().match('message')) {
-        console.log(' ');
-        var unboxed = unwrapper['message'](message);
-        console.log('>message received ' + JSON.stringify(unboxed) );
-        var wrapped = socketWrapper("ACK"+unboxed.headerId, unboxed.headerId) ;
-        sendSocketDg['ACK'](wrapped);
-
+    } else {
+        onHandler[type](message);
     }
-    // secure channel recieving
-    else if (message.toString().match('dt')) {
-        var dtRcvd = unwrapBuffer(message);
-        console.log(">Packet from "+remote.address+":" + remote.port + "\n"+dtRcvd);
-        console.log(" ");
-        sendSocket(socketWrapper("ACK", dtRcvd.headerId));
 
-    }
-    else if (message.toString().match("ACK")) {
-        console.log(">"+message);
-        console.log(" ");
-        console.log(">>Gotcha catch 'em all!!");
-        // sendSocketDg["message"]();
-    }
-    else {
-        console.log('>incoming msg from ' + remote.address + ':' + remote.port +' - ' + message);
-    } 
 });
 
 function init3WHandShake() {
@@ -209,4 +241,4 @@ client.bind("4266", HOST)
 init3WHandShake();
 console.warn("WHEEEEEW");
 console.log('(* ￣︿￣)◑﹏◐');
-setTimeout(secureChTest, 1500);
+// setTimeout(secureChTest, 1500);

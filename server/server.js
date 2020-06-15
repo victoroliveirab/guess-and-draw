@@ -6,6 +6,29 @@ var CLIENT_PORT = "4266";
 var dgram = require('dgram');
 var server = dgram.createSocket('udp4');
 
+var sentHistory = {};
+
+const history = {
+    'add': (datagram, id) => {
+        sentHistory[id] = message;
+        console.log('Added id:' + sentHistory)
+    },
+    'remove': (id) => {
+        delete sentHistory[id];
+        console.log('>WHOOSH ' + id + 'went down the toilet');
+    },
+    'show': ()=> {
+        console.log(">>")
+        console.log('>>>>> Hitowy( •̀ ω •́ )✧ <<<<')
+        sentHistory.forEach(element => {
+            console.log('>History id:' + element.id + "content: " + element.message);
+        });
+    },
+    'get': (id) => {
+        return sentHistory[id];
+    }
+}
+
 server.on('error', (err) => {
     console.log(`server error:\n${err.stack}`);
     server.close();
@@ -70,16 +93,6 @@ server.on('message', function messageHandler(message, remote) {
     } 
 });
 
-// function messageHandler(message, remote) {
-//     if (message === 'SYN') {
-//         var ack = socketWrapper("ACK");
-//         server.send(ack, 0, ack.length, PORT, HOST, function(err, bytes) {
-//             if (err) throw err;
-//             console.log('>SYN recieved from' + HOST +':'+ PORT);
-//             console.log('>APROVED: Sendind ACK');
-//           });
-//     } 
-// }
 
 class Datagram {
     constructor(id, payload,headerSrc,headerDst,headerLength)  {
@@ -101,13 +114,13 @@ class Datagram {
 function socketWrapper(data, id){
     var packet = new Datagram(id, data, HOST, HOST,0);
     console.log('>(from wrapper) datagram ' + JSON.stringify(packet));
-    size = new Buffer.from("dt" + JSON.stringify( packet));
+    size = new Buffer.from("dt|" + JSON.stringify( packet));
     packet.headerLength = size.length;
     return packet;
 }
 
 function unwrapBuffer(message) {
-    var data = message.toString().replace("dt", "") ;
+    var data = message.toString().replace("dt", "").replace('|','') ;
     var recieved = JSON.parse(data);
     console.log('>>');
     console.log('>Unwrapped ' + data);
@@ -118,7 +131,7 @@ function unwrapBuffer(message) {
 
 const unwrapper = {
     'dt': (message) => {
-        var data = message.toString().replace("dt", "") ;
+        var data = message.toString().replace("dt", "").replace('|','');
         console.log('> Unboxing ' + data + 'typeof data: ' + typeof(data));
         var recieved = JSON.parse(data);
         console.log('>>');
@@ -128,7 +141,7 @@ const unwrapper = {
         return recieved;
     },
     'message': (message) => {
-        var data = message.toString().replace("message", "") ;
+        var data = message.toString().replace("message", "").replace('|','');
         var recieved = JSON.parse(data);
         // console.log('>>');
         // console.log('>Unwrapped ' + data);
@@ -137,7 +150,7 @@ const unwrapper = {
         return recieved;
     },
     'ACK':(message) => {
-        var data = message.toString().replace("ACK", "") ;
+        var data = message.toString().replace("ACK", "").replace('|','');
         // console.log('> Unboxing ' + data);
         var recieved = JSON.parse(data);
         console.log('>>');
@@ -165,6 +178,55 @@ function sendSocket(datagram, type) {
       });
 }
 
+const onHandler = {
+    'SYN': (message) => {
+        var ack = new Buffer.from('ACK');
+        server.send(ack, 0, ack.length, CLIENT_PORT, HOST, function(err, bytes) {
+            if (err) throw err;
+            console.log('>SYN recieved from' + HOST +':'+ PORT);
+            console.log('>APROVED: Sendind ACK');
+          });
+    },
+    'SYNACK': (message) => {
+        var helo = new Buffer.from("HELO from Server");
+        server.send(helo, 0, helo.length, CLIENT_PORT, HOST, function(err, bytes) {
+            if (err) throw err;
+            console.log('>SYNACK recieved from' + HOST +':'+ PORT);
+            console.log('>HandShake completed \n>Listening... UwU q(≧▽≦q)');
+          });
+    },
+    'dt': (message) => {
+        var dtRcvd = unwrapBuffer(message);
+        console.log(">Datagram from "+remote.address+":" + remote.port + "\n"+ dtRcvd.payload);
+        console.log(" ");
+        console.log('>Header.id ' + dtRcvd.headerId);
+
+        var wrapped = socketWrapper("ACK"+dtRcvd.headerId, dtRcvd.headerId) ;
+
+        console.log('>(from on.message) has dt => ' + JSON.stringify(wrapped));
+        // sendSocket(wrapped, 'ACK');
+        sendSocketDg['ACK'](wrapped, dtRcvd.headerId);
+        console.log('UDP ACK returned to ' + HOST +':'+ PORT);
+    },
+    'ACK': (message) => {
+        console.log(" ");
+        console.log(">"+message);
+        var unboxed = unwrapper['ACK'](message);
+        console.log(">>Gotcha catch 'em all!! ~o( =∩ω∩= )m┏ (゜ω゜)=☞ GOT: " + unboxed['payload'] + ' id: ' + unboxed['headerId']);
+        // sendSocketDg["message"]();
+    },
+    'message': (message) => {
+        console.log(' ');
+        var unboxed = unwrapper['message'](message);
+        console.log('>message received ' + JSON.stringify(unboxed) );
+        var wrapped = socketWrapper("ACK"+unboxed.headerId, unboxed.headerId) ;
+        sendSocketDg['ACK'](wrapped);
+    },
+    'NAK': (message) => {
+
+    }
+}
+
 const sendSocketDg = {
     "dt":
         (datagram) => {
@@ -185,20 +247,22 @@ const sendSocketDg = {
     "message": 
             (message, id) => {
                 var datagram = socketWrapper(message, id);
-                var packet = new Buffer.from('message' + JSON.stringify(datagram));
+                var packet = new Buffer.from('message|' + JSON.stringify(datagram));
                 server.send(packet, 0, packet.length, PORT, HOST, function(err, bytes) {
                 if (err) throw err;
                 console.log('UDP message to ' + HOST +':'+ PORT);
                 });
-            }
+    },
+    'NAK': (id) => {
+        var datagram = socketWrapper("Pkd N"+id+" not received", id);
+        var packet = new Buffer.from('NAK' + JSON.stringify(datagram));
+        client.send(packet, 0, packet.length, PORT, HOST, function(err, bytes) {
+        if (err) throw err;
+        console.log('UDP NAK to ' + HOST +':'+ PORT);
+        });
+    }
 }
 
-function sendSocketDgw(datagram) {
-    var acket = new Buffer.from("dt" + JSON.stringify(datagram));
-    server.send(packet, 0, packet.length, PORT, HOST, function(err, bytes) {
-        if (err) throw err;
-        console.log('UDP message sent to ' + HOST +':'+ PORT);
-      });
-}
+
 server.bind(PORT, HOST);
 console.log('(❤´艸｀❤)(⓿_⓿)')
