@@ -1,7 +1,7 @@
 const sketch = (p) => {
 
     let canvas;
-    let canvaColor = 240;
+    let canvaColor = "#f0f0f0";
     let height = 400;
     let width = 800;
     let color;
@@ -23,13 +23,17 @@ const sketch = (p) => {
         p.noStroke();
         let x = Math.floor(p.mouseX);
         let y  = Math.floor(p.mouseY);
-        p.rect(x, y, 3, 3);
+        if(!fun.eraserMode()){
+          p.rect(x, y, 3, 3);
+          fun.getLastMove();
+        }else{
+          p.ellipse(x, y, 40, 40);
+        }
       },
       delLastMove: function() {
         let a = moves.pop();
         try {
           a.map(item => {
-            console.log(item);
             p.fill(canvaColor);
             p.rect(item.x, item.y, 3, 3);
           });
@@ -53,12 +57,18 @@ const sketch = (p) => {
         }else{
           return false
         }
+      },
+      eraserMode: function() {
+        if(color === canvaColor){
+          return true
+        }
+        return false
       }
 
     }
 
     p.mouseReleased = () => {
-      if (fun.inCanva()) {
+      if (fun.inCanva() && !fun.eraserMode()) {
         console.log()
         moves.push(lastMove);
         lastMove = [];
@@ -69,7 +79,7 @@ const sketch = (p) => {
     p.mouseDragged = () => {
       if (fun.inCanva()) {
         fun.drawColor();
-        fun.getLastMove();
+        //fun.getLastMove();
       }
       return false;
     }
@@ -101,7 +111,7 @@ const sketch = (p) => {
         if(rst !== props.rst){
           rstFlag = !rstFlag;
           rst = props.rst;
-      }
+        }
     }
 }
 

@@ -9,6 +9,7 @@ class Canva extends Component {
     color: "#000000",
     delete: 0,
     reset: 0,
+    eraser: 0,
   };
 
   changeColor = (item) => {

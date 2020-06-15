@@ -88,12 +88,12 @@ class SideMenu extends Component {
       },
       {
         id: 8,
-        name: "white",
+        name: "background",
         style: {
           flex: 1,
           border: "none",
           borderRadius: "4px",
-          background: "#ffffff",
+          background: "#f0f0f0",
           padding: "20px 2.5em",
           cursor: "pointer",
         },
