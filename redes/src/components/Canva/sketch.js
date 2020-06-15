@@ -21,33 +21,45 @@ const sketch = (p) => {
       drawColor: function() {
         p.fill(color);
         p.noStroke();
-        p.rect(p.mouseX, p.mouseY, 3, 3);
+        let x = Math.floor(p.mouseX);
+        let y  = Math.floor(p.mouseY);
+        p.rect(x, y, 3, 3);
       },
       delLastMove: function() {
         let a = moves.pop();
-        try{
+        try {
           a.map(item => {
+            console.log(item);
             p.fill(canvaColor);
-            p.noStroke();
             p.rect(item.x, item.y, 3, 3);
           });
-        }
-        catch(err){
+        }catch (err){
 
         }
         rstFlag = !rstFlag;
       },
       getLastMove: function() {
         let pos  = {};
-        pos['x'] = p.mouseX;
-        pos['y'] = p.mouseY;
+        pos['x'] = Math.floor(p.mouseX);
+        pos['y'] = Math.floor(p.mouseY);
         lastMove.push(pos);
+      },
+      inCanva: function() {
+        // I don't like terciary ops.
+        let x = p.mouseX;
+        let y = p.mouseY;
+        if(canvas && (x > 0 && x <= width) && (y > 0 && y <= height)){
+          return true
+        }else{
+          return false
+        }
       }
 
     }
 
     p.mouseReleased = () => {
-      if (canvas && (p.mouseX < width & p.mouseY < height)) {
+      if (fun.inCanva()) {
+        console.log()
         moves.push(lastMove);
         lastMove = [];
       }
@@ -55,9 +67,9 @@ const sketch = (p) => {
 
     //Adicionar bound esquedo e superior no if
     p.mouseDragged = () => {
-      if (canvas && (p.mouseX < width & p.mouseY < height)) {
-      fun.drawColor();
-      fun.getLastMove();
+      if (fun.inCanva()) {
+        fun.drawColor();
+        fun.getLastMove();
       }
       return false;
     }

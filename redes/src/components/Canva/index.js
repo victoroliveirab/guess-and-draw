@@ -2,7 +2,6 @@ import React, { Component } from "react";
 import P5Wrapper from "react-p5-wrapper";
 import sketch from "./sketch";
 import SideMenu from "./SideMenu";
-import PropTypes from "prop-types";
 import { Grid, Button } from "@material-ui/core";
 
 class Canva extends Component {
