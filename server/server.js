@@ -7,6 +7,8 @@ var dgram = require('dgram');
 var server = dgram.createSocket('udp4');
 
 var sentHistory = {};
+var ackHistory= {};
+var receiving = {};
 
 const history = {
     'add': (datagram, id) => {
@@ -44,15 +46,11 @@ server.on('message', function messageHandler(message, remote) {
     var syn = new Buffer.from("SYN");
     var synack = new Buffer.from("SYNACK"); 
 
-    if (Buffer.compare(syn, message) === 0) {
-        var ack = new Buffer.from('ACK');
-        server.send(ack, 0, ack.length, CLIENT_PORT, HOST, function(err, bytes) {
-            if (err) throw err;
-            console.log('>SYN recieved from' + HOST +':'+ PORT);
-            console.log('>APROVED: Sendind ACK');
-          });
-    } 
-    else if (Buffer.compare(synack, message) === 0) {
+    var type = message.toString().split('|')[0];
+    // var content = message.toString().split('|')[1];
+
+
+    if (Buffer.compare(synack, message) === 0) {
         var helo = new Buffer.from("HELO from Server");
         server.send(helo, 0, helo.length, CLIENT_PORT, HOST, function(err, bytes) {
             if (err) throw err;
@@ -60,36 +58,10 @@ server.on('message', function messageHandler(message, remote) {
             console.log('>HandShake completed \n>Listening... UwU q(≧▽≦q)');
           });
     } 
-    else if (message.toString().match('dt')) {
-        var dtRcvd = unwrapBuffer(message);
-        console.log(">Datagram from "+remote.address+":" + remote.port + "\n"+ dtRcvd.payload);
-        console.log(" ");
-        console.log('>Header.id ' + dtRcvd.headerId);
-
-        var wrapped = socketWrapper("ACK"+dtRcvd.headerId, dtRcvd.headerId) ;
-        console.log('>(from on.message) has dt => ' + JSON.stringify(wrapped));
-        // sendSocket(wrapped, 'ACK');
-        sendSocketDg['ACK'](wrapped, dtRcvd.headerId);
-        console.log('UDP ACK returned to ' + HOST +':'+ PORT);
-    } 
-    else if (message.toString().match("ACK")) {
-        console.log(" ");
-        console.log(">"+message);
-        var unboxed = unwrapper['ACK'](message);
-        console.log(">>Gotcha catch 'em all!! ~o( =∩ω∩= )m┏ (゜ω゜)=☞ GOT: " + unboxed['payload'] + ' id: ' + unboxed['headerId']);
-        // sendSocketDg["message"]();
-    }
-    else if (message.toString().match('message')) {
-        console.log(' ');
-        var unboxed = unwrapper['message'](message);
-        console.log('>message received ' + JSON.stringify(unboxed) );
-        var wrapped = socketWrapper("ACK"+unboxed.headerId, unboxed.headerId) ;
-        sendSocketDg['ACK'](wrapped);
-
-    }
     else {
-        console.log('\n>>');
-        console.log('>incoming msg from ' + remote.address + ':' + remote.port +' - ' + message);
+        // sendSocketDg[type](message);
+        console.log('>type: ', type);
+        onHandler[type](message);
     } 
 });
 
@@ -158,6 +130,16 @@ const unwrapper = {
         // console.log('>payload ' + recieved['payload']);
         console.log(' ');
         return recieved;
+    }, 
+    'NACK': (message) => {
+        var data = message.toString().replace('NAK', "").replace('|','');
+        var parsed = JSON.parse(data);
+        return parsed;
+    },
+    'SMPH': (message) => {
+        var data = message.toString().replace('SMPH', "").replace('|','');
+        var parsed = JSON.parse(data);
+        return parsed;
     }
 
 }
@@ -212,6 +194,7 @@ const onHandler = {
         console.log(" ");
         console.log(">"+message);
         var unboxed = unwrapper['ACK'](message);
+        ackHistory[unboxed.headerId] = true;
         console.log(">>Gotcha catch 'em all!! ~o( =∩ω∩= )m┏ (゜ω゜)=☞ GOT: " + unboxed['payload'] + ' id: ' + unboxed['headerId']);
         // sendSocketDg["message"]();
     },
@@ -223,22 +206,67 @@ const onHandler = {
         sendSocketDg['ACK'](wrapped);
     },
     'NAK': (message) => {
-
+        var nack = unwrapper['NACK'](message);
+        var resend = history['get'](nack.id)
+        sendSocketDg['dt'](resend);
+        console.log(">NAK:"+ nack.id + " resending = " + JSON.stringify(resend));
+    },
+    'SMPH': (message) => {
+        var unboxed = unwrapper['SMPH'](message);
+        var parsed = JSON.parse(unboxed);
+        receiving[rid] = parsed.idRange;
+        rid++;
+        console.log(">SMPH request aproved, sending SMPHACK...");
+        sendSocketDg['SMPHACK']();
+    },
+    'SMPHACK': (message) => {
+            for (let id = 0; id < array.length; id++) {
+                sendSocketDg['dt'](history['get'](id));
+            }
     }
 }
 
+
+
+var id = 0;
+var range;
+var rid = 0; // receiving id
 const sendSocketDg = {
     "dt":
         (datagram) => {
-            var packet = new Buffer.from("dt" + JSON.stringify(datagram));
+            var packet = new Buffer.from("dt|" + JSON.stringify(datagram));
             server.send(packet, 0, packet.length, PORT, HOST, function(err, bytes) {
             if (err) throw err;
             console.log('UDP datagram sent to ' + HOST +':'+ PORT);
             });
     },
+    'SMPH':  // Simple Multi-Packet Header
+        (dtList) => {
+            var first = id;
+            dtList.forEach(datagram => {
+                history['add'](datagram, id);
+                id = id + 1;
+            });
+            var last = id;
+            var range = first + '-' + last;
+            var packet = new Buffer.from('SMPH|'+ JSON.stringify( {idRange: range} ));
+            server.send(packet, 0, packet.length, PORT, HOST, (err, bytes) => {
+                if (err) throw err;
+                console.log('>SMPH request sent awaiting SMPHACK...');
+            });
+    },
+    'SMPHACK':
+        () => {
+            var message = new Buffer.from("SMPACK");
+            server.send(message, 0, message.length, PORT, HOST, (err, bytes) => {
+                if (err) throw err;
+                console.log('>SMPHACK sent awaiting packets...');
+            });
+            console.log(' ');
+    },
     "ACK":
             (datagram) => {
-            var packet = new Buffer.from("ACK" + JSON.stringify(datagram));
+            var packet = new Buffer.from("ACK|" + JSON.stringify(datagram));
             server.send(packet, 0, packet.length, PORT, HOST, function(err, bytes) {
             if (err) throw err;
             console.log('UDP ACK retured to ' + HOST +':'+ PORT);
@@ -254,8 +282,8 @@ const sendSocketDg = {
                 });
     },
     'NAK': (id) => {
-        var datagram = socketWrapper("Pkd N"+id+" not received", id);
-        var packet = new Buffer.from('NAK' + JSON.stringify(datagram));
+        var datagram = socketWrapper(' {"id":'+id+'} ');
+        var packet = new Buffer.from('NAK|' + JSON.stringify(datagram));
         client.send(packet, 0, packet.length, PORT, HOST, function(err, bytes) {
         if (err) throw err;
         console.log('UDP NAK to ' + HOST +':'+ PORT);

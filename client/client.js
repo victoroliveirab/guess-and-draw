@@ -31,7 +31,7 @@ client.on('listening', () => {
 const sendSocketDg = {
     "dt":
         (datagram) => {
-            var packet = new Buffer.from("dt" + JSON.stringify(datagram));
+            var packet = new Buffer.from("dt|" + JSON.stringify(datagram));
             client.send(packet, 0, packet.length, PORT, HOST, function(err, bytes) {
             if (err) throw err;
             console.log('UDP ( •̀ ω •́ )✧ datagwam sent to ' + HOST +':'+ PORT + ' id: ' + datagram.headerId);
@@ -39,7 +39,7 @@ const sendSocketDg = {
     },
     "ACK":
             (packet) => {
-            var packet = new Buffer.from("ACK" + JSON.stringify(datagram));
+            var packet = new Buffer.from("ACK|" + JSON.stringify(datagram));
             client.send(packet, 0, packet.length, PORT, HOST, function(err, bytes) {
             if (err) throw err;
             console.log('UDP ACK retured to ' + HOST +':'+ PORT);
@@ -48,15 +48,15 @@ const sendSocketDg = {
     "message": 
             (message, id) => {
                 var datagram = socketWrapper(message, id);
-                var packet = new Buffer.from('message' + JSON.stringify(datagram));
+                var packet = new Buffer.from('message|' + JSON.stringify(datagram));
                 client.send(packet, 0, packet.length, PORT, HOST, function(err, bytes) {
                 if (err) throw err;
-                console.log('UDP message to ' + HOST +':'+ PORT);
+                console.log('UDP message to UwU ' + HOST +':'+ PORT);
                 });
     },
     'NAK': (id) => {
         var datagram = socketWrapper("Pkd N"+id+" not received", id);
-        var packet = new Buffer.from('NAK' + JSON.stringify(datagram));
+        var packet = new Buffer.from('NAK|' + JSON.stringify(datagram));
         client.send(packet, 0, packet.length, PORT, HOST, function(err, bytes) {
         if (err) throw err;
         console.log('UDP NAK to ' + HOST +':'+ PORT);
@@ -124,32 +124,45 @@ var synack = new Buffer.from("SYNACK");
 
 const unwrapper = {
     'dt': (message) => {
-        var data = message.toString().replace("dt", "") ;
+        var data = message.toString().replace("dt", "").replace('|','');
+        console.log('> Unboxing ' + data + 'typeof data: ' + typeof(data));
+        var recieved = JSON.parse(data);
+        console.log('>>');
+        console.log('>Unwrapped ' + data);
+        console.log('>payload ' + recieved['payload']);
+        console.log(' ');
+        return recieved;
+    },
+    'message': (message) => {
+        var data = message.toString().replace("message", "").replace('|','');
+        var recieved = JSON.parse(data);
+        // console.log('>>');
+        // console.log('>Unwrapped ' + data);
+        // console.log('>(from unwrapper) Message ' + recieved['payload']);
+        console.log(' ');
+        return recieved;
+    },
+    'ACK':(message) => {
+        var data = message.toString().replace("ACK", "").replace('|','');
+        // console.log('> Unboxing ' + data);
         var recieved = JSON.parse(data);
         console.log('>>');
         // console.log('>Unwrapped ' + data);
         // console.log('>payload ' + recieved['payload']);
         console.log(' ');
         return recieved;
+    }, 
+    'NACK': (message) => {
+        var data = message.toString().replace('NAK', "").replace('|','');
+        var parsed = JSON.parse(data);
+        return parsed;
     },
-    'message': (message) => {
-        var data = message.toString().replace("message", "") ;
-        var recieved = JSON.parse(data);
-        console.log('>>');
-        // console.log('>Unwrapped ' + data);
-        // console.log('>(from unwrapper) Message ' + recieved['payload']);
-        console.log(' ');
-        return recieved;
-    },
-    'NAK': (message) => {
-        var data = message.toString().replace("message", "") ;
-        var recieved = JSON.parse(data);
-        console.log('>>');
-        console.log('>Unwrapped ' + data);
-        console.log('>(from unwrapper) Message ' + recieved['payload']);
-        console.log(' ');
-        return recieved;
+    'SMPH': (message) => {
+        var data = message.toString().replace('SMPH', "").replace('|','');
+        var parsed = JSON.parse(data);
+        return parsed;
     }
+
 }
 
 // take the data and return it in an not wrapped datagram
@@ -221,7 +234,7 @@ client.on('message', function messageHandler(message, remote) {
     if (message.toString().match("HELO") && handshaked) {
         console.log(">"+message);
         console.log(" ");
-        sendSocket(socketWrapper("Just livin on database wooo wooo", 0),"message");
+        sendSocket(socketWrapper("Just livin on database wooo wooo", 0),"message|");
     } else {
         onHandler[type](message);
     }
