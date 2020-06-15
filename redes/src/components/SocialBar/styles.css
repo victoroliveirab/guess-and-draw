@@ -1,0 +1,6 @@
+.answers_content {
+    max-height: 10rem;
+    overflow-y: scroll;
+    border-radius: 10px;
+    border-top:2px;
+};
