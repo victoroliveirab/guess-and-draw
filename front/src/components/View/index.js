@@ -16,7 +16,7 @@ class View extends React.Component {
                 backgroundColor:'#c6c6c6',
                 padding:0,
                 margin:0}}>
-                <Grid item xs={10} md={8} lg={6}>
+                <Grid item xs={11} md={9} lg={8}>
                     {this.props.children}
                 </Grid>
             </Grid>

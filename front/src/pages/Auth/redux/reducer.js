@@ -1,5 +1,3 @@
-
-
 export const Types = {
     LOGIN:'LOGIN',
     LOGOUT:'LOGOUT'
@@ -22,6 +20,7 @@ const reducer = (state = INITIAL_STATE, action) => {
     }
 }
 
+export default reducer;
 
 export const login = (state, {username}) => ({
     ...state,
@@ -37,5 +36,3 @@ export const logut = (state) => ({
     user:{},
     logged_in: false,
 });
-
-export default reducer;
