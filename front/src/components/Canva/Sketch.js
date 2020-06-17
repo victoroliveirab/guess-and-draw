@@ -1,5 +1,3 @@
-// const connection = new WebSocket("ws://localhost:8080");
-// const button = document.querySelector("#send");
 
 const sketch = (p) => {
   let canvas;
@@ -13,13 +11,14 @@ const sketch = (p) => {
     canvas = p.createCanvas(height, width);
     p.background(0);
     p.noStroke();
+    p.frameRate(1);
   }
 
-
   // Bug memso mudando a cor p.fill() não funciona
+  //Adicionar bound esquedo e superior no if
   p.mouseDragged = () => {
     if (canvas && (p.mouseX < height & p.mouseY < width)) {
-      p.fill(color.r, color.g, color.b);
+      p.fill(color);
       p.ellipse(p.mouseX, p.mouseY, 5, 5);
       console.log(color);
       //connection.send(JSON.stringify({ mouseX, mouseY }));
@@ -32,7 +31,6 @@ const sketch = (p) => {
       p.background(0);
       flag = !flag;
     }
-
   }
 
   // o Wrapper usa essa função para pegar props : )
@@ -45,4 +43,4 @@ const sketch = (p) => {
   }
 }
 
-export default sketch;
+export default sketch; 

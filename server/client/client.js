@@ -21,7 +21,6 @@ class Datagram {
     }
 }
 
-
 client.on('listening', () => {
     const address = client.address();
     console.log(`>client listening ${address.address}:${address.port}`);
@@ -263,9 +262,13 @@ function socketWrapper(data, id){
     var packet = new Datagram(id, data, HOST, HOST,0);
     // console.log('>(from wrapper) datagram ' + JSON.stringify(packet));
     size = new Buffer.from("dt" + JSON.stringify( packet));
+function socketWrapper(data, id){
+    var packet = new Datagram(id, data, HOST, HOST,0);
+    size = new Buffer.from("dt" + JSON.stringify(packet));
     packet.headerLength = size.length;
     return packet;
 }
+
 
 // funcao pra testes do SMPH (dropado ate NAK completo)
 function secureChTest() {
@@ -300,6 +303,7 @@ function reliableSnd(datagram) {
 
 }
 
+
 /**
  * wrapp the datagram into a packet to be and send forth
  * @param {*} packet the datagram to send
@@ -333,6 +337,7 @@ client.on('message', function messageHandler(message, remote) {
         onHandler[type](message);
     }
 
+
 });
 
 function init3WHandShake() {
@@ -345,8 +350,10 @@ function init3WHandShake() {
 }
 
 client.bind("4266", HOST)
+
 init3WHandShake();
 console.warn("WHEEEEEW");
 console.log('(* ￣︿￣)◑﹏◐');
 // setTimeout(secureChTest, 1500);
+
 
