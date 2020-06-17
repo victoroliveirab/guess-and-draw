@@ -1,3 +1,5 @@
+const { timestampLog } = require('./utils');
+
 var PORT = 33333;
 var HOST = '127.0.0.1';
 
@@ -7,28 +9,25 @@ var dgram = require('dgram');
 var server = dgram.createSocket('udp4');
 
 var sentHistory = {};
-var ackHistory= {};
+var ackHistory = {};
 var receiving = {};
 
 const history = {
-    'add': (message, id) => {
+    add: (message, id) => {
         sentHistory[id] = message;
-        console.log('Added id:' + sentHistory)
+        timestampLog(`Added id: ${sentHistory}`);
     },
-    'remove': (id) => {
+    remove: (id) => {
         delete sentHistory[id];
-        console.log('>WHOOSH ' + id + 'went down the toilet');
+        timestampLog(`WHOOSH: ${id} went down the toilet`);
     },
-    'show': ()=> {
-        console.log(">>")
-        console.log('>>>>> Hitowy( •̀ ω •́ )✧ <<<<')
+    show: () => {
+        timestampLog('>>>>> History <<<<');
         sentHistory.forEach(element => {
-            console.log('>History id:' + element.id + "content: " + element.message);
+            timestampLog(`History id: ${element.id} - Content: ${element.message}`);
         });
     },
-    'get': (id) => {
-        return sentHistory[id];
-    }
+    get: (id) => sentHistory[id]
 }
 
 server.on('error', (err) => {
@@ -38,200 +37,161 @@ server.on('error', (err) => {
 
 server.on('listening', () => {
     const address = server.address();
-    console.log(`>server listening ${address.address}:${address.port}`);
-    console.log('>UDP Server listening on ' + address.address + ':' + address.port);
+    timestampLog(`UDP Server listening at ${address.address}:${address.port}`);
 });
 
 server.on('message', function messageHandler(message, remote) {
     var syn = new Buffer.from("SYN");
-    var synack = new Buffer.from("SYNACK"); 
+    var synack = new Buffer.from("SYNACK");
 
-    var type = message.toString().split('|')[0];
-    var content = message.toString().split('|')[1];
-
+    const [type, content] = message.toString().split('|');
 
     if (Buffer.compare(synack, message) === 0) {
-        var helo = new Buffer.from("HELO from Server");
-        server.send(helo, 0, helo.length, CLIENT_PORT, HOST, function(err, bytes) {
+        const hello = new Buffer.from('Server says hello');
+        server.send(hello, 0, hello.length, CLIENT_PORT, HOST, (err, bytes) => {
             if (err) throw err;
-            console.log('>SYNACK recieved from' + HOST +':'+ PORT);
-            console.log('>HandShake completed \n>Listening... UwU q(≧▽≦q)');
-          });
-    } 
+            timestampLog(`SYNACK received from ${HOST}:${PORT}`);
+            timestampLog(`Handshake now completed. Listening...`);
+        });
+    }
     else {
-        // sendSocketDg[type](message);
-        console.log('>type: ', type);
-        console.log('>content: ', content);
-        if ( 'a' ) {
-            onHandler[type](message);
-        }
-        else {
-            console.log('>empty');
-        }
-    } 
+        timestampLog(`Message type: ${type}`);
+        timestampLog(`Message content: ${content}`);
+        onHandler[type](message);
+    }
 });
 
 
 class Datagram {
-    constructor(id, payload,headerSrc,headerDst,headerLength)  {
-        this.payload= payload;
-        this.headerSrc=headerSrc;
-        this.headerDst=headerDst;
-        this.headerLength=headerLength;
-        this.headerChecksum=null;
-        this.headerId=id;
+    constructor(id, payload, headerSrc, headerDst, headerLength) {
+        this.payload = payload;
+        this.headerSrc = headerSrc;
+        this.headerDst = headerDst;
+        this.headerLength = headerLength;
+        this.headerChecksum = null;
+        this.headerId = id;
     }
 }
 
-// take the data and return it in an not wrapped datagram
-/**
- * wrapp the datagram into a packet to be and send forth
- * @param {*} data, the data to become a new Datagram object
- * @param { int } id, the header ID (int)
- */
-function socketWrapper(data, id){
-    var packet = new Datagram(id, data, HOST, HOST,0);
-    console.log('>(from wrapper) datagram ' + JSON.stringify(packet));
-    size = new Buffer.from("dt|" + JSON.stringify( packet));
+function socketWrapper(data, id) {
+    const packet = new Datagram(id, data, HOST, HOST, 0);
+    timestampLog(`Datagram from wrapper: ${JSON.stringify(packet)}`);
+    size = new Buffer.from("dt|" + JSON.stringify(packet));
     packet.headerLength = size.length;
     return packet;
 }
 
 function unwrapBuffer(message) {
-    var data = message.toString().replace("dt", "").replace('|','') ;
-    var recieved = JSON.parse(data);
-    console.log('>>');
-    console.log('>Unwrapped ' + data);
-    console.log('>payload ' + recieved['payload']);
-    console.log(' ');
-    return recieved;
+    const data = message.toString().replace('dt', '').replace('|', '');
+    const received = JSON.parse(data);
+    timestampLog(`Unwrapped buffer: ${data}`);
+    timestampLog(`Payload: ${received.payload}`);
+    return received;
 }
 
 const unwrapper = {
-    'dt': (message) => {
-        console.log(">> Message " + message.toString());
-        console.log(">> RAW " + message);
-        var data = message.toString().replace("dt", "").replace('|','');
-        console.log('> Unboxing ' + data + 'typeof data: ' + typeof(data));
-        var recieved = JSON.parse(data);
-        console.log('>>');
-        console.log('>Unwrapped ' + data);
-        console.log('>payload ' + recieved['payload']);
-        console.log(' ');
-        return recieved;
-    },
-    'message': (message) => {
-        var data = message.toString().replace("message", "").replace('|','');
-        var recieved = JSON.parse(data);
-        // console.log('>>');
-        // console.log('>Unwrapped ' + data);
-        // console.log('>(from unwrapper) Message ' + recieved['payload']);
-        console.log(' ');
-        return recieved;
-    },
-    'ACK':(message) => {
-        var data = message.toString().replace("ACK", "").replace('|','');
-        // console.log('> Unboxing ' + data);
-        var recieved = JSON.parse(data);
-        console.log('>>');
-        // console.log('>Unwrapped ' + data);
-        // console.log('>payload ' + recieved['payload']);
-        console.log(' ');
-        return recieved;
-    }, 
-    'NACK': (message) => {
-        var data = message.toString().replace('NAK', "").replace('|','');
-        var parsed = JSON.parse(data);
+    dt: (message) => {
+        timestampLog(`Message: ${message.toString()}`);
+        timestampLog(`Raw message: ${message}`);
+        const data = message.toString().replace('dt', '').replace('|', '');
+        timestampLog(`Unboxing ${data} typeof data: ' + typeof (data)`);
+        const parsed = JSON.parse(data);
+        timestampLog(`Unwrapped ${data}`);
+        timestampLog(`Payload ${received.payload}`);
         return parsed;
     },
-    'SMPH': (message) => {
-        var data = message.toString().replace('SMPH', "").replace('|','');
-        var parsed = JSON.parse(data);
+    message: (message) => {
+        const data = message.toString().replace('message', '').replace('|', '');
+        const parsed = JSON.parse(data);
+        return parsed;
+    },
+    ACK: (message) => {
+        const data = message.toString().replace('ACK', '').replace('|', '');
+        const parsed = JSON.parse(data);
+        return parsed;
+    },
+    NACK: (message) => {
+        const data = message.toString().replace('NAK', '').replace('|', '');
+        const parsed = JSON.parse(data);
+        return parsed;
+    },
+    SMPH: (message) => {
+        const data = message.toString().replace('SMPH', '').replace('|', '');
+        const parsed = JSON.parse(data);
         return parsed;
     }
 
 }
 
-/**
- * wrapp the datagram into a packet to be and send forth
- * @param {*} packet the datagram to send
- */
 function sendSocket(datagram, type) {
     packet = new Buffer.from(type + JSON.stringify(datagram));
-    server.send(packet, 0, packet.length, PORT, HOST, function(err, bytes) {
+    server.send(packet, 0, packet.length, PORT, HOST, function (err, bytes) {
         if (err) throw err;
-        console.log('UDP message sent to ' + HOST +':'+ PORT);
-        console.log('>Typesent ' + typeof(packet) );
-        console.log('>Sent ' + packet);
-        // console.log('>Pure ' + type );
-        console.log('>>');
-      });
+        timestampLog('UDP message sent to ' + HOST + ':' + PORT);
+        timestampLog(`Package type: ${typeof (packet)}`);
+        timestampLog(`Package sent: ${packet}`);
+    });
 }
 
 const onHandler = {
-    'SYN': (message) => {
-        var ack = new Buffer.from('ACK');
-        server.send(ack, 0, ack.length, CLIENT_PORT, HOST, function(err, bytes) {
+    SYN: (message) => {
+        const ack = new Buffer.from('ACK');
+        server.send(ack, 0, ack.length, CLIENT_PORT, HOST, function (err, bytes) {
             if (err) throw err;
-            console.log('>SYN recieved from' + HOST +':'+ PORT);
-            console.log('>APROVED: Sendind ACK');
-          });
+            timestampLog(`SYN received from ${HOST}:${PORT}`);
+            timestampLog('APPROVED: Sendind ACK');
+        });
     },
-    'SYNACK': (message) => {
-        var helo = new Buffer.from("HELO from Server");
-        server.send(helo, 0, helo.length, CLIENT_PORT, HOST, function(err, bytes) {
+    SYNACK: (message) => {
+        const hello = new Buffer.from("HELO from Server");
+        server.send(hello, 0, hello.length, CLIENT_PORT, HOST, function (err, bytes) {
             if (err) throw err;
-            console.log('>SYNACK recieved from' + HOST +':'+ PORT);
-            console.log('>HandShake completed \n>Listening... UwU q(≧▽≦q)');
-          });
+            timestampLog(`SYNACK received from ${HOST}:${PORT}`);
+            timestampLog('Handshake done');
+        });
     },
-    'dt': (message) => {
-        var dtRcvd = unwrapper['dt'](message);
-        console.log(">Datagram from "+remote.address+":" + remote.port + "\n"+ dtRcvd.payload);
-        console.log(" ");
-        console.log('>Header.id ' + dtRcvd.headerId);
+    dt: (message) => {
+        const dtRcvd = unwrapper['dt'](message);
+        timestampLog(`Datagram from ${remote.address}:${remote.port}`);
+        timeStampLog(`Payload: ${dtRcvd.payload}`);
+        timestampLog(`Header Id: ${dtRcvd.headerId}`);
 
-        var wrapped = socketWrapper("ACK"+dtRcvd.headerId, dtRcvd.headerId) ;
+        const wrapped = socketWrapper('ACK' + dtRcvd.headerId, dtRcvd.headerId);
 
-        console.log('>(from on.message) has dt => ' + JSON.stringify(wrapped));
-        // sendSocket(wrapped, 'ACK');
+        timestampLog(`Datagram: ${JSON.stringify(wrapper)}`);
         sendSocketDg['ACK'](wrapped, dtRcvd.headerId);
-        console.log('UDP ACK returned to ' + HOST +':'+ PORT);
+        timestampLog(`UDP ACK returned to ${HOST}:${PORT}`);
     },
-    'ACK': (message) => {
-        console.log(" ");
-        console.log(">"+message);
-        var unboxed = unwrapper['ACK'](message);
+    ACK: (message) => {
+        timestampLog(`Message: ${message}`);
+        const unboxed = unwrapper['ACK'](message);
         ackHistory[unboxed.headerId] = true;
-        console.log(">>Gotcha catch 'em all!! ~o( =∩ω∩= )m┏ (゜ω゜)=☞ GOT: " + unboxed['payload'] + ' id: ' + unboxed['headerId']);
-        // sendSocketDg["message"]();
+        timestampLog(`Got: ${unboxed.payload} and id: ${unboxed.headerId}`);
     },
-    'message': (message) => {
-        console.log(' ');
-        var unboxed = unwrapper['message'](message);
-        console.log('>message received ' + JSON.stringify(unboxed) );
-        var wrapped = socketWrapper("ACK"+unboxed.headerId, unboxed.headerId) ;
+    message: (message) => {
+        const unboxed = unwrapper['message'](message);
+        timestampLog(`Message received: ${JSON.stringify(unboxed)}`);
+        const wrapped = socketWrapper("ACK" + unboxed.headerId, unboxed.headerId);
         sendSocketDg['ACK'](wrapped);
     },
-    'NAK': (message) => {
-        var nack = unwrapper['NACK'](message);
-        var resend = history['get'](nack.id)
+    NAK: (message) => {
+        const nack = unwrapper['NACK'](message); // nack mesmo?
+        const resend = history['get'](nack.id)
         sendSocketDg['dt'](resend);
-        console.log(">NAK:"+ nack.id + " resending = " + JSON.stringify(resend));
+        timestampLog(`NAK #${nack.id} resending: ${JSON.stringify(resend)}`);
     },
-    'SMPH': (message) => {
-        var unboxed = unwrapper['SMPH'](message);
-        console.log('>unbox ' + JSON.stringify(unboxed));
-        // var parsed = JSON.parse(unboxed);
+    SMPH: (message) => {
+        const unboxed = unwrapper['SMPH'](message);
+        timestampLog(`Unboxed: ${JSON.stringify(unboxed)}`);
         receiving[rid] = unboxed.idRange;
         rid++;
-        console.log(">SMPH request aproved, sending SMPHACK...");
+        timestampLog('SMPH request aproved, sending SMPHACK...');
         sendSocketDg['SMPHACK']();
     },
-    'SMPHACK': (message) => {
-        if (rid >0) {
-            var start = receiving[rid-1].split('-')[0];
-            var end = receiving[rid-1].split('-')[1];
+    SMPHACK: (message) => {
+        if (rid > 0) {
+            const start = receiving[rid - 1].split('-')[0];
+            const end = receiving[rid - 1].split('-')[1];
         }
         for (let id = start; id <= end; id++) {
             sendSocketDg['dt'](history['get'](id));
@@ -242,73 +202,65 @@ const onHandler = {
 
 
 var id = 0;
-var range;
 var rid = 0; // receiving id
 const sendSocketDg = {
-    "dt":
-        (datagram) => {
-            var packet = new Buffer.from("dt|" + JSON.stringify(datagram));
-            console.log('\n>Sending '+ JSON.stringify(datagram) + ' tipo ' + typeof(datagram));
-            server.send(packet, 0, packet.length, PORT, HOST, function(err, bytes) {
+    dt: (datagram) => {
+        const datagramString = JSON.stringify(datagram);
+        const packet = new Buffer.from(`dt|${datagramString}`);
+        timestampLog(`Sending ${datagramString} of type ${typeof datagram}`);
+        server.send(packet, 0, packet.length, PORT, HOST, function (err, bytes) {
             if (err) throw err;
-            console.log('UDP datagram sent to ' + HOST +':'+ PORT);
-            });
+            timestampLog(`UDP datagram sent to ${HOST}:${PORT}`);
+        });
     },
-    'SMPH':  // Simple Multi-Packet Header
-        (dtList) => {
-            var first = id;
-            // dtList.forEach((datagram) => {
-            for (key in dtList) {
-                history['add'](dtList[key], id);
-                id = id + 1;
-            }
-            // });
-            var last = id;
-            var range = first + '-' + last;
-            var obj =  {};
-            obj[idRange] = range;
-            var packet = new Buffer.from('SMPH|'+ JSON.stringify(obj));
-            server.send(packet, 0, packet.length, PORT, HOST, (err, bytes) => {
-                if (err) throw err;
-                console.log('>SMPH request sent awaiting SMPHACK...');
-            });
-    },
-    'SMPHACK':
-        () => {
-            var message = new Buffer.from("SMPHACK");
-            server.send(message, 0, message.length, PORT, HOST, (err, bytes) => {
-                if (err) throw err;
-                console.log('>SMPH accepted awaiting pkts...');
-            });
-            console.log(' ');
-    },
-    "ACK":
-            (datagram) => {
-            var packet = new Buffer.from("ACK|" + JSON.stringify(datagram));
-            server.send(packet, 0, packet.length, PORT, HOST, function(err, bytes) {
+    SMPH: (dtList) => {
+        const first = id;
+        for (key in dtList) {
+            history['add'](dtList[key], id);
+            id = id + 1;
+        }
+        const last = id;
+        const range = first + '-' + last;
+        const obj = {};
+        obj[idRange] = range;
+        const packet = new Buffer.from(`SMPH|${JSON.stringify(obj)}`);
+        server.send(packet, 0, packet.length, PORT, HOST, (err, bytes) => {
             if (err) throw err;
-            console.log('UDP ACK retured to ' + HOST +':'+ PORT);
-            });
+            timestampLog('SMPH request sent... Awaiting SMPHACK...');
+        });
     },
-    "message": 
-            (message, id) => {
-                var datagram = socketWrapper(message, id);
-                var packet = new Buffer.from('message|' + JSON.stringify(datagram));
-                server.send(packet, 0, packet.length, PORT, HOST, function(err, bytes) {
-                if (err) throw err;
-                console.log('UDP message to ' + HOST +':'+ PORT);
-                });
-    },
-    'NAK': (id) => {
-            var datagram = socketWrapper(' {"id":'+id+'} ');
-            var packet = new Buffer.from('NAK|' + JSON.stringify(datagram));
-            server.send(packet, 0, packet.length, PORT, HOST, function(err, bytes) {
+    SMPHACK: () => {
+        const message = new Buffer.from('SMPHACK');
+        server.send(message, 0, message.length, PORT, HOST, (err, bytes) => {
             if (err) throw err;
-            console.log('UDP NAK to ' + HOST +':'+ PORT);
-            });
+            timestampLog('SMPH accepted... Awaiting packages...');
+        });
+    },
+    ACK: (datagram) => {
+        const packet = new Buffer.from(`ACK|${JSON.stringify(datagram)}`);
+        server.send(packet, 0, packet.length, PORT, HOST, function (err, bytes) {
+            if (err) throw err;
+            timestampLog(`UDP ACK retured to ${HOST}:${PORT}`);
+        });
+    },
+    message: (message, id) => {
+        const datagram = socketWrapper(message, id);
+        const packet = new Buffer.from(`message|${JSON.stringify(datagram)}`);
+        server.send(packet, 0, packet.length, PORT, HOST, function (err, bytes) {
+            if (err) throw err;
+            timestampLog(`UDP message to ${HOST}:${PORT}`);
+        });
+    },
+    NAK: (id) => {
+        const datagram = socketWrapper(' {"id":' + id + '} ');
+        const packet = new Buffer.from(`NAK|${JSON.stringify(datagram)}`);
+        server.send(packet, 0, packet.length, PORT, HOST, function (err, bytes) {
+            if (err) throw err;
+            timestampLog(`UDP NAK to ${HOST}:${PORT}`);
+        });
     }
 }
 
 
 server.bind(PORT, HOST);
-console.log('(❤´艸｀❤)(⓿_⓿)')
+timestampLog('Starting server...');
