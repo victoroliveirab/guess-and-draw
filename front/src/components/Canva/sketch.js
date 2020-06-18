@@ -1,8 +1,10 @@
+import constants from './constants';
+
 const sketch = (p) => {
 
     const url = "b449f2c643c1.ngrok.io"
     const connection = new WebSocket("ws://" + url);
-    const button = document.querySelector("#send");
+    // const button = document.querySelector("#send");
 
     let canvas;
     let canvaColor = "#f0f0f0";
@@ -38,7 +40,7 @@ const sketch = (p) => {
       delLastMove: function() {
         let a = moves.pop();
         try {
-          a.map(item => {
+          a.forEach(item => {
             p.fill(canvaColor);
             p.rect(item.x, item.y, 3, 3);
             connection.send(JSON.stringify({mouseX: item.x, mouseY: item.y, color: canvaColor}));
@@ -85,8 +87,8 @@ const sketch = (p) => {
       console.error("WebSocket error observed:", event);
     };
 
-    connection.onmessage = (event) => {
-      const { mouseX, mouseY, color} = JSON.parse(event.data);
+    connection.onmessage = ({data}) => {
+      const { mouseX, mouseY, color = constants.default_color} = JSON.parse(data);
       p.fill(color);
       p.ellipse(mouseX, mouseY, 5, 5);
     };

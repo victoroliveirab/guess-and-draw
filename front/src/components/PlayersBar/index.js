@@ -19,9 +19,9 @@ export default function PlayersBar({ players }) {
                     <Grid item>
                         {players.length ? (
                             <List>
-                                {players.map(player => (
-                                    <ListItem alignItems='center'>
-                                        <Typography align='center' variant='h7'>
+                                {players.map((player, index) => (
+                                    <ListItem alignItems='center' key={`player_${index}`}>
+                                        <Typography align='center' variant='h6'>
                                             {player.name} - {player.points}pts
                                         </Typography>
                                     </ListItem>

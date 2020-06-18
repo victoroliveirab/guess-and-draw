@@ -3,10 +3,11 @@ import P5Wrapper from "react-p5-wrapper";
 import sketch from "./sketch";
 import SideMenu from "./SideMenu";
 import { Grid, Button } from "@material-ui/core";
+import constants from './constants';
 
 class Canva extends Component {
   state = {
-    color: "#000000",
+    color: constants.default_color,
     delete: 0,
     reset: 0,
     eraser: 0,
