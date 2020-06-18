@@ -1,10 +1,20 @@
+import * as CryptoJS from 'crypto-js';
+
+const encryptx = (string, key) => {
+  // console.log(string);
+  return CryptoJS.AES.encrypt(string, key).toString();
+}
+
 const sketch = (p) => {
 
     const url = "b449f2c643c1.ngrok.io"
     const connection = new WebSocket("ws://" + url);
     const button = document.querySelector("#send");
 
-    let id;
+    let pk;
+    let prime;
+    let gio;
+    let key;
     let canvas;
     let canvaColor = "#f0f0f0";
     let height = 400;
@@ -43,7 +53,8 @@ const sketch = (p) => {
             p.rect(item.x, item.y, 3, 3);
             let x = Math.floor(item.x);
             let y  = Math.floor(item.x);
-            connection.send(JSON.stringify({id ,mouseX: x, mouseY: y, color: canvaColor}));
+            let crypt = encryptx(JSON.stringify({mouseX: x, mouseY: y, color: canvaColor}), key);
+            // connection.send(crypt);
           });
         }catch (err){
 
@@ -90,11 +101,23 @@ const sketch = (p) => {
 
     connection.onmessage = (event) => {
       let data = JSON.parse(event.data);
-      if(data.id){
-        id = data.id;
+      // console.log('data');
+      // console.log(data);
+      if(data.p && data.g){
+        prime = data.p;
+        gio = data.g;
+        pk = Math.floor(Math.random() * 9) + 2;
+        // console.log('pk:', pk);
+        let jesus = Math.pow(gio, pk) % prime;
+        console.log(`${gio}^${pk} % ${prime} = ${jesus}`);
+        connection.send(JSON.stringify({ketchup: jesus}));
+      }else if(data.ketchup){
+        key = Math.pow(data.ketchup, pk) % prime;
+        console.log('key:',key);
+        key = key.toString();
+        console.log(`${data.ketchup}^${pk} % ${prime} = ${key}`);
       }else{
         const { mouseX, mouseY, color} = JSON.parse(event.data);
-        console.log(mouseX, mouseY);
         if(color){
           p.fill(color);
           p.rect(mouseX, mouseY, 3, 3);
@@ -116,7 +139,8 @@ const sketch = (p) => {
         //console.log(p.mouseX, p.mouseY);
         let mouseX = Math.floor(p.mouseX);
         let mouseY = Math.floor(p.mouseY);
-        connection.send(JSON.stringify({id, mouseX, mouseY, color}));
+        let crypt = encryptx(JSON.stringify({mouseX, mouseY, color}),key);
+        // connection.send(crypt);
       }
       return false;
     }
