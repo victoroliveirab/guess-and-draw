@@ -29,7 +29,7 @@ export default function PlayersBar({ players }) {
                                 ))}
                             </List>
                         ) : (
-                                <Typography>
+                                <Typography style={{color:'#c9c9c9'}} variant='h5'>
                                     Sem jogadores!
                                 </Typography>
                             )}

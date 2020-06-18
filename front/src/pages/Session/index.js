@@ -16,9 +16,30 @@ const playersMock = [
     {name:'GiuDosLancher',points:5},
 ];
 
+const INITIAL_STATE = {
+    pontuation: 0,
+    responses: [],
+    chat: [],
+}
+
 class SessionPage extends React.Component {
+
+    constructor(props) {
+        super(props);
+        this.state = INITIAL_STATE;
+    }
+
+    handleResponse = (props) => {
+
+    };
+
+    handleComment = (props) => {
+
+    }
+
     render() {
         const {user} = this.props;
+        const {chat, pontuation, responses} = this.state;
         console.log('Session', user);
         return (
             <View>
@@ -34,10 +55,10 @@ class SessionPage extends React.Component {
                             <Grid item xs={12}>
                                 <Grid container spacing={2} direction='row'>
                                     <Grid item xs={12} lg={6}>
-                                        <ResponsesCard />
+                                        <ResponsesCard onSubmit={this.handleResponse}  responses={responses} />
                                     </Grid>
                                     <Grid item xs={12} lg={6}>
-                                        <ChatCard />
+                                        <ChatCard onSubmit={this.handleComment} chat={chat} />
                                     </Grid>
                                 </Grid>
                             </Grid>
