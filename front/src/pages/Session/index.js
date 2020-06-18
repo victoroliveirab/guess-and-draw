@@ -6,6 +6,7 @@ import PlayersBar from '../../components/PlayersBar';
 import ChatCard from '../../components/Chat';
 import ResponsesCard from '../../components/Responses';
 import {Grid} from '@material-ui/core'
+import ScrollView from '../../components/ScrollView';
 import { connect } from 'react-redux';
 
 const playersMock = [
@@ -16,10 +17,32 @@ const playersMock = [
     {name:'GiuDosLancher',points:5},
 ];
 
+const messagesMock = [
+    {
+        author: playersMock[0].name,
+        content: 'Ola!'
+    },
+    {
+        author: playersMock[1].name,
+        content: 'Dale!'
+    }
+];
+
+const responsesMock = [
+    {
+        author: playersMock[2].name,
+        content: 'batata'
+    },
+    {
+        author: playersMock[1].name,
+        content: 'laranja'
+    }
+]
+
 const INITIAL_STATE = {
     pontuation: 0,
-    responses: [],
-    chat: [],
+    responses: responsesMock,
+    chat: messagesMock,
 }
 
 class SessionPage extends React.Component {
@@ -29,20 +52,35 @@ class SessionPage extends React.Component {
         this.state = INITIAL_STATE;
     }
 
-    handleResponse = (props) => {
+    construcSocialContent = (message) => ({
+        author: this.props.user.username || 'unknown',
+        content: message
+    })
 
+    handleResponse = (props) => {
+        console.log(props);
+        this.handleUpdate('responses',props)
     };
 
     handleComment = (props) => {
+        console.log(props);
+        this.handleUpdate('chat',props);
+    }
 
+    handleUpdate = (type, content) =>{
+        this.setState({[`${type}`]:[
+            ...this.state.chat,
+            this.construcSocialContent(content)
+        ]})
     }
 
     render() {
         const {user} = this.props;
         const {chat, pontuation, responses} = this.state;
-        console.log('Session', user);
+        console.log('Session', this.state);
         return (
             <View>
+                <ScrollView>
                 <Grid container spacing={2} direction='row'>
                     <Grid item xs={12} md={12} lg={3}>
                         <PlayersBar players={playersMock} />
@@ -58,7 +96,7 @@ class SessionPage extends React.Component {
                                         <ResponsesCard onSubmit={this.handleResponse}  responses={responses} />
                                     </Grid>
                                     <Grid item xs={12} lg={6}>
-                                        <ChatCard onSubmit={this.handleComment} chat={chat} />
+                                        <ChatCard onSubmit={this.handleComment} messages={chat} />
                                     </Grid>
                                 </Grid>
                             </Grid>
@@ -66,6 +104,7 @@ class SessionPage extends React.Component {
 
                     </Grid> 
                 </Grid>
+                </ScrollView>
             </View>
         )
     }

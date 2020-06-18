@@ -1,5 +1,5 @@
 import React from 'react';
-import {Card, CardContent, Grid, Typography, Input, Fab} from '@material-ui/core';
+import {Grid, Typography, Input, Fab} from '@material-ui/core';
 import ContentCard from '../ContentCard';
 import FlatList from '../FlatList';
 
@@ -7,15 +7,10 @@ export default class ResponsesCard extends React.Component{
     constructor(props) {
         super(props);
         this.state = {
-            responses: [],
             staging: '',
             loading: false,
         }
     }
-
-    handleUpdateResponses(responses) {
-        this.setState({responses});
-    };
 
     handleSubmit = () => {
         const {onSubmit} = this.props;
@@ -27,14 +22,26 @@ export default class ResponsesCard extends React.Component{
         this.setState({staging: target.value})
     );
 
+    ResponseItem = ({author, content}) => (
+        <Grid container justify='flex-start'>
+            <Grid item>
+                <Typography color={'secondary'} variant={'h5'} align={'left'}>{author}</Typography>
+            </Grid>
+            <Grid item>
+                <Typography style={{color:'black'}} align='left' variant='h6'>: {content}</Typography>
+            </Grid>
+        </Grid>
+    )
+
     render() {
-        const {responses,staging} = this.state;
+        const {staging} = this.state;
+        const {responses} = this.props;
         return (
            <ContentCard title={'Respostas'}>
                <Grid container spacing={3}>
                     <Grid item xs={12}>
                         {responses.length ? (
-                            <FlatList /> 
+                            <FlatList data={responses} RenderItem={this.ResponseItem} type={'response'} /> 
                         ):(
                             <Typography style={{color:'#c9c9c9',marginTop:'30px'}} align='center' variant='h6'>Nenhuma resposta enviada</Typography>
                         )}
@@ -45,7 +52,9 @@ export default class ResponsesCard extends React.Component{
                                 <Input style={{width:'100%'}} value={staging} onChange={this.handleChange} onSubmit={this.handleSubmit} />
                             </Grid>
                             <Grid item>
-                                <Fab color='primary' size='small' onClick={this.handleSubmit}>></Fab>
+                                <Fab color='primary' style={{border:'2px solid black'}} size='small' onClick={this.handleSubmit}>
+                                    >
+                                </Fab>
                             </Grid>
 
                         </Grid>

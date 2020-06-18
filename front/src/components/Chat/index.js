@@ -17,22 +17,10 @@ export default class ChatCard extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      messages: [],
       staging: "",
       loading: false,
     };
   }; 
-
-  handleUpdateMessages(messages) {
-      this.setState({messages})
-  };
-
-  componentDidMount() {
-      const {messages} = this.props;
-      if(messages) {
-          this.handleUpdateMessages(messages);
-      };
-  };
 
   handleSubmit = () => {
       const {onSubmit} = this.props;
@@ -48,23 +36,24 @@ export default class ChatCard extends React.Component {
     <ListItem>
       <Grid container direction="column">
         <Grid item xs={12}>
-          <Typography>{author}</Typography>
+          <Typography variant='h5' color='secondary'>{author}</Typography>
         </Grid>
         <Grid>
-          <Typography>{content}</Typography>
+          <Typography variant='h6'>{content}</Typography>
         </Grid>
       </Grid>
     </ListItem>
   );
 
   render() {
-    const { messages, staging } = this.state;
+    const {staging} = this.state;
+    const {messages} = this.props;
     return (
       <ContentCard title={'Chat'}>
           <Grid container spacing={3} justify='center'>
               <Grid item xs={12}>
                 {messages.length ? (
-                    <FlatList data={messages} renderItem={this.MessageItem} />
+                    <FlatList data={messages} RenderItem={this.MessageItem} />
                 ) : (
                     <Typography style={{color:'#c9c9c9',marginTop:'30px'}} align='center' variant='h6'>Sem mensagens</Typography>
                 )}
@@ -75,8 +64,8 @@ export default class ChatCard extends React.Component {
                         <Input style={{width:'100%'}} value={staging} onChange={this.handleChange} onSubmit={this.handleSubmit} />
                     </Grid>
                     <Grid item>
-                        <Fab onClick={this.handleSubmit} color='primary' size={'small'}>
-                            send
+                        <Fab onClick={this.handleSubmit} style={{border:'2px solid black'}} color='primary' size={'small'}>
+                            >
                         </Fab>
                     </Grid>
                 </Grid>
