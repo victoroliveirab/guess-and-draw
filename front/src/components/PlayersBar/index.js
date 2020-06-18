@@ -7,10 +7,11 @@ import {
     Card,
     CardContent
 } from '@material-ui/core'
+import {params} from '../../themes';
 
 export default function PlayersBar({ players }) {
     return (
-        <Card style={{height:'100%'}}>
+        <Card style={{height:'100%', backgroundColor:'white', width:'100%', borderRadius:params.radius}}>
             <CardContent>
                 <Grid container alignItems='center' justify='center'>
                     <Grid item xs={12}>

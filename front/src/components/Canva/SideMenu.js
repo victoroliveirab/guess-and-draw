@@ -1,4 +1,6 @@
 import React, { Component } from "react";
+import { Button, Grid } from "@material-ui/core";
+import {params} from '../../themes';
 
 class SideMenu extends Component {
   state = {
@@ -7,11 +9,11 @@ class SideMenu extends Component {
         id: 1,
         name: "black",
         style: {
-          flex: 1,
-          border: "none",
-          borderRadius: "4px",
+          height:'40px',
+          width:'100%',
+          border:'2px solid',
+          borderRadius: params.radius,
           background: "#000000",
-          padding: "20px 2.5em",
           cursor: "pointer",
         },
       },
@@ -19,11 +21,11 @@ class SideMenu extends Component {
         id: 2,
         name: "red",
         style: {
-          flex: 1,
-          border: "none",
-          borderRadius: "4px",
+          height:'40px',
+          width:'100%',
+          border:'2px solid',
+          borderRadius: params.radius,
           background: "#ff0000",
-          padding: "20px 2.5em",
           cursor: "pointer",
         },
       },
@@ -31,11 +33,11 @@ class SideMenu extends Component {
         id: 3,
         name: "blue",
         style: {
-          flex: 1,
-          border: "none",
-          borderRadius: "4px",
+          height:'40px',
+          width:'100%',
+          border:'2px solid',
+          borderRadius: params.radius,
           background: "#1a1aff",
-          padding: "20px 2.5em",
           cursor: "pointer",
         },
       },
@@ -43,10 +45,11 @@ class SideMenu extends Component {
         id: 4,
         name: "yellow",
         style: {
-          border: "none",
-          borderRadius: "4px",
+          height:'40px',
+          width:'100%',
+          border:'2px solid',
+          borderRadius: params.radius,
           background: "#ffff00",
-          padding: "20px 2.5em",
           cursor: "pointer",
         },
       },
@@ -54,11 +57,11 @@ class SideMenu extends Component {
         id: 5,
         name: "green",
         style: {
-          flex: 1,
-          border: "none",
-          borderRadius: "4px",
+          height:'40px',
+          width:'100%',
+          border:'2px solid',
+          borderRadius: params.radius,
           background: "#1aff1a",
-          padding: "20px 2.5em",
           cursor: "pointer",
         },
       },
@@ -66,11 +69,11 @@ class SideMenu extends Component {
         id: 6,
         name: "pink",
         style: {
-          flex: 1,
-          border: "none",
-          borderRadius: "4px",
+          height:'40px',
+          width:'100%',
+          border:'2px solid',
+          borderRadius: params.radius,
           background: "#ff4dd2",
-          padding: "20px 2.5em",
           cursor: "pointer",
         },
       },
@@ -78,11 +81,11 @@ class SideMenu extends Component {
         id: 7,
         name: "brown",
         style: {
-          flex: 1,
-          border: "none",
-          borderRadius: "4px",
+          height:'40px',
+          width:'100%',
+          border:'2px solid',
+          borderRadius: params.radius,
           background: "#663300",
-          padding: "20px 2.5em",
           cursor: "pointer",
         },
       },
@@ -90,25 +93,33 @@ class SideMenu extends Component {
         id: 8,
         name: "background",
         style: {
-          flex: 1,
-          border: "none",
-          borderRadius: "4px",
+          height:'40px',
+          width:'100%',
+          border:'2px solid',
+          borderRadius: params.radius,
           background: "#f0f0f0",
-          padding: "20px 2.5em",
           cursor: "pointer",
         },
       },
     ],
   };
 
-  render() {
-    return this.state.colorButtons.map((item) => (
-      <button
+  renderItem = (item) => (
+    <Grid item xs={4} md={3} lg={12}>
+      <Button
+        onClick={this.props.changeColor.bind(this, item.style.background)}
         style={item.style}
         key={item.id}
-        onClick={this.props.changeColor.bind(this, item.style.background)}
-      ></button>
-    ));
+      />
+    </Grid>
+  );
+
+  render() {
+    return (
+      <Grid container spacing={3} justify='center' alignItems={'center'} direction={window.innerWidth > '1280' ? 'row' : 'column'}>
+        {this.state.colorButtons.map((item) => this.renderItem(item))}
+      </Grid>
+    );
   }
 }
 

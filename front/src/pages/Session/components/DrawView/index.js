@@ -1,6 +1,7 @@
 import React from 'react';
 import Canva from '../../../../components/Canva';
-import {Card,CardContent} from '@material-ui/core'
+import {Card,CardContent, Grid} from '@material-ui/core'
+import {params} from '../../../../themes';
 
 class DrawView extends React.Component {
 
@@ -17,9 +18,13 @@ class DrawView extends React.Component {
 
     render() {
         return(
-            <Card>
+            <Card style={{backgroundColor:'#fff', borderRadius:params.radius}}>
                 <CardContent>
-                    <Canva style={this.getStyle} />
+                    <Grid container alignItems={'center'} justify={'center'}>
+                        <Grid item xs={12}>
+                            <Canva style={this.getStyle} />
+                        </Grid>
+                    </Grid>
                 </CardContent>
             </Card>
         )

@@ -4,6 +4,7 @@ import sketch from "./sketch";
 import SideMenu from "./SideMenu";
 import { Grid, Button } from "@material-ui/core";
 import constants from './constants';
+import theme, {params} from '../../themes';
 
 class Canva extends Component {
   state = {
@@ -34,22 +35,26 @@ class Canva extends Component {
   render() {
     //console.log(this.data.color);
     return (
-      <Grid container direction='row' spacing={2}>
-        <Grid item xs={2}>
+      <Grid container spacing={2}>
+        <Grid item xs={12} md={12} lg={2}>
           <Grid container spacing={2} direction='column' justify='space-between'>
             <Grid item xs={12}>
-              <SideMenu changeColor={this.changeColor} />
+              <Grid container justify={'center'} alignItems={'center'}>
+                  <Grid item xs={12}>
+                    <SideMenu changeColor={this.changeColor} />
+                  </Grid>
+                </Grid>
             </Grid>
             <Grid item xs={12}>
-                <Grid container spacing={2}> 
-                    <Grid item xs={12}>
-                        <Button variant='contained' style={btnStyle} onClick={this.resetMove}>
+                <Grid container spacing={2} direction='row'> 
+                    <Grid item xs>
+                        <Button color='primary' variant='contained' style={btnStyle} onClick={this.resetMove}>
                             Reset
                         </Button>
 
                     </Grid>
-                    <Grid item xs={12}>
-                        <Button variant='contained' style={btnStyle} onClick={this.deleteBkg}>
+                    <Grid item xs>
+                        <Button color='primary' variant='contained' style={btnStyle} onClick={this.deleteBkg}>
                             Apagar
                         </Button>
                     </Grid>
@@ -58,14 +63,18 @@ class Canva extends Component {
           </Grid>
         </Grid>
         <Grid item xs={12} lg={10}>
-          <P5Wrapper
-            id = {'sketch'}
-            mode = {this.togggle}
-            sketch={sketch}
-            color={this.state.color}
-            del={this.state.delete}
-            rst={this.state.reset}
-          ></P5Wrapper>
+          <Grid container direction={'column'} alignItems={'center'} justify={'center'}>
+            <Grid item>
+              <P5Wrapper
+                id = {'sketch'}
+                mode = {this.togggle}
+                sketch={sketch}
+                color={this.state.color}
+                del={this.state.delete}
+                rst={this.state.reset}
+              ></P5Wrapper>
+            </Grid>
+          </Grid>
         </Grid>
       </Grid>
     );
@@ -78,6 +87,9 @@ width:'100%',
   padding: "20px 4%",
   cursor: "pointer",
   color: "#000000",
+  borderColor: theme.palette.secondary.main ,
+  border: '2px solid',
+  borderRadius: params.radius,
 };
 
 export default Canva;
